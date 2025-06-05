@@ -3,6 +3,9 @@
 pkgs.mkShell {
   name = "rust-dev-shell";
   buildInputs = [
+    pkgs.pkg-config
+    pkgs.libasound2-dev
+    pkgs.libudev-dev
     pkgs.rustup
     pkgs.pkg-config
     pkgs.alsaLib
@@ -11,6 +14,6 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    echo "Ambiente Rust pronto!"
+    echo "Rust env ready."
   '';
 }
