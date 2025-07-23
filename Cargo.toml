@@ -3,13 +3,12 @@ name = "Artificial-Culture-Rust-"
 version = "0.1.0"
 edition = "2024"
 
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
 [dependencies]
-bevy_ecs = "0.16.1"
-bincode = "2.0.1"
-rust-analyzer = "0.0.1"
-serde = "1.0.219"
-sled = "0.34.7"
-uuid = "1.17.0"
 rand = "0.9.1"
-strum = "0.27.1"
-strum_macros = "0.27.1"
+bevy = "0.16.1"
