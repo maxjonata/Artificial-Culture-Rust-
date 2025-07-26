@@ -24,7 +24,7 @@ impl Default for GameConstants {
         Self {
             num_npcs: 20,
             npc_radius: 15.0,
-            npc_speed: 10000.0,
+            npc_speed: 200.0,
             social_distance: 100.0,
         }
     }
