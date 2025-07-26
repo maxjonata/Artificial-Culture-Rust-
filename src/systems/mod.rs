@@ -1,1 +1,3 @@
-pub mod update;
+pub mod rumor;
+pub mod movement;
+pub mod visual;

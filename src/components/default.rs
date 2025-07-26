@@ -1,43 +1,28 @@
 use bevy::prelude::*;
-use bevy::reflect::TypeRegistry;
 
+use crate::components::knowledge::KnowledgeBase;
+use crate::components::needs::{Needs, Desire};
+use crate::components::npc::{Npc, Personality};
+use crate::components::resources::{RumorTimer, GameConstants, ColorConstants};
+
+/// Plugin for registering all custom components with Bevy's reflection system
 pub struct CustomComponentsPlugin;
 
 impl Plugin for CustomComponentsPlugin {
     fn build(&self, app: &mut App) {
         app
+            // NPC components
             .register_type::<Npc>()
             .register_type::<Personality>()
+            // Knowledge components
             .register_type::<KnowledgeBase>()
-            .register_type::<Velocity>()
+            // Needs components
+            .register_type::<Needs>()
+            .register_type::<Desire>()
+            // Resources
             .register_type::<RumorTimer>()
+            .register_type::<GameConstants>()
+            .register_type::<ColorConstants>()
         ;
     }
 }
-
-
-// --- Componentes ---
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct Npc;
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct Personality {
-    pub openness: f32,
-}
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct KnowledgeBase {
-    pub knows_rumor: bool,
-}
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct Velocity(pub(crate) Vec2);
-
-// --- Recurso ---
-#[derive(Resource, Reflect)]
-#[reflect(Resource)]
-pub struct RumorTimer(pub Timer);
