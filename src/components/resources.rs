@@ -27,22 +27,14 @@ pub struct GameConstants {
     pub safety_decay: f32,
     /// Decay rate to need for social interaction
     pub social_decay: f32,
-}
-
-impl Default for GameConstants {
-    fn default() -> Self {
-        Self {
-            num_npcs: 20,
-            npc_radius: 15.0,
-            npc_speed: 200.0,
-            social_distance: 100.0,
-            hunger_decay: 0.1,
-            thirst_decay: 0.1,
-            fatigue_regen: 0.1,
-            safety_decay: 0.1,
-            social_decay: 0.1,
-        }
-    }
+    /// Number of wells (water sources) to spawn
+    pub num_wells: usize,
+    /// Number of restaurants (food sources) to spawn
+    pub num_restaurants: usize,
+    /// Number of hotels (rest sources) to spawn
+    pub num_hotels: usize,
+    /// Number of safe zones to spawn
+    pub num_safe_zones: usize,
 }
 
 /// Resource for color constants
@@ -53,13 +45,4 @@ pub struct ColorConstants {
     pub red: Color,
     /// Green color for NPCs that don't know the rumor
     pub green: Color,
-}
-
-impl Default for ColorConstants {
-    fn default() -> Self {
-        Self {
-            red: Color::srgb(1.0, 0.2, 0.2),
-            green: Color::srgb(0.2, 1.0, 0.2),
-        }
-    }
 }
