@@ -52,4 +52,4 @@ Artificial Culture Rust is a simulation of rumor propagation in a social network
 Contributions are welcome! Please open issues or submit pull requests for improvements, bug fixes, or new features.
 
 ## License
-[GNU AFFERO GENERAL PUBLIC LICENSE](https://www.gnu.org/licenses/agpl-3.0.pt-br.html)
+This project is licensed under CC BY-NC-SA 4.0 - free for personal/academic use, commercial licensing available.
