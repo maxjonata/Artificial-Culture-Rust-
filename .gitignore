@@ -112,3 +112,4 @@ rust-project.json
 result
 result-*
 .direnv
+/.github/copilot-instructions.md
