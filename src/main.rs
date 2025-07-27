@@ -3,38 +3,71 @@ mod systems;
 mod entity_builders;
 
 use bevy::input::common_conditions::input_toggle_active;
-// Usando Bevy 0.13.2
 use bevy::prelude::*;
 use bevy_inspector_egui::{
     bevy_egui::EguiPlugin,
     quick::WorldInspectorPlugin,
 };
 use bevy_rapier2d::prelude::*;
-// Removed conflicting import
-use crate::components::*;
-use crate::components::default::CustomComponentsPlugin;
-use crate::components::resources::{GameConstants, ColorConstants};
-use crate::systems::rumor::{inject_rumor_system, handle_rumor_spread};
-use crate::systems::movement::movement_system;
-use crate::systems::visual::color_system;
-use crate::systems::needs::{decay_basic_needs, handle_social_interactions};
-use crate::entity_builders::spawn_test_npcs;
 
-// --- Sistemas ---
+use crate::components::default::CustomComponentsPlugin;
+use crate::components::resources::{ColorConstants, GameConstants, RumorTimer};
+use crate::components::*;
+use crate::entity_builders::{environment::spawn_environmental_resources, spawn_test_npcs};
+
+use crate::systems::environment::{
+    handle_hotel_interactions,
+    handle_restaurant_interactions,
+    handle_well_interactions,
+    regenerate_environmental_resources
+};
+use crate::systems::movement::{analyze_movement_patterns, movement_system};
+use crate::systems::needs::{
+    decay_basic_needs,
+    fulfill_desires,
+    handle_social_interactions,
+    update_desires_from_needs
+};
+use crate::systems::pathfinding::{
+    analyze_pathfinding_behavior,
+    resource_discovery_system,
+    steering_navigation_system,
+    target_cleanup_system,
+    target_selection_system
+};
+// Import all the systems we need
+use crate::systems::rumor::{analyze_rumor_diffusion, handle_rumor_spread, inject_rumor_system};
+use crate::systems::visual::color_system;
+
+use crate::systems::environment::{ResourceDepletionEvent, ResourceInteractionEvent};
+use crate::systems::movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
+// Import all the ML-ready events for future integration
+use crate::systems::needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
+use crate::systems::pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
+use crate::systems::rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
 
 fn setup_simulation(
     mut commands: Commands,
     game_constants: Res<GameConstants>,
     color_constants: Res<ColorConstants>,
+    windows: Query<&Window>,
 ) {
     commands.spawn(Camera2d);
 
+    // Spawn NPCs first
     spawn_test_npcs(&mut commands, &game_constants, &color_constants);
+
+    // Spawn environmental resources randomly across the space
+    if let Ok(window) = windows.single() {
+        spawn_environmental_resources(
+            &mut commands,
+            &game_constants,
+            window.width(),
+            window.height()
+        );
+    }
 }
 
-
-
-// --- Função Principal ---
 fn main() {
     App::new()
         .add_plugins((
@@ -45,15 +78,73 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
             RapierDebugRenderPlugin::default(),
         ))
+        // Resources initialization
         .insert_resource(RumorTimer(Timer::from_seconds(3.0, TimerMode::Once)))
         .insert_resource(GameConstants::default())
         .insert_resource(ColorConstants::default())
+
+        // ML-HOOK: Register all events for quantifiable behavior tracking
+        .add_event::<NeedDecayEvent>()
+        .add_event::<DesireChangeEvent>()
+        .add_event::<SocialInteractionEvent>()
+        .add_event::<RumorInjectionEvent>()
+        .add_event::<RumorSpreadEvent>()
+        .add_event::<RumorSpreadAttemptEvent>()
+        .add_event::<BoundaryCollisionEvent>()
+        .add_event::<MovementBehaviorEvent>()
+        .add_event::<ResourceInteractionEvent>()
+        .add_event::<ResourceDepletionEvent>()
+        .add_event::<PathTargetSetEvent>()
+        .add_event::<PathTargetReachedEvent>()
+        .add_event::<ResourceDiscoveredEvent>()
+
+        // Startup systems
         .add_systems(Startup, setup_simulation)
+
+        // Update systems organized by priority and dependencies
         .add_systems(Update, (
-            inject_rumor_system,
-            (handle_rumor_spread, handle_social_interactions, color_system).chain(),
-            movement_system,
+            // Core need management (highest priority)
             decay_basic_needs,
+            update_desires_from_needs,
+
+            // Movement system with desire-driven behavior
+            movement_system,
+
+            // Social and rumor systems
+            (
+                inject_rumor_system,
+                handle_rumor_spread,
+                handle_social_interactions,
+            ),
+
+            // Environmental resource interactions
+            (
+                handle_well_interactions,
+                handle_restaurant_interactions,
+                handle_hotel_interactions,
+                regenerate_environmental_resources,
+            ),
+
+            // Desire fulfillment and visual feedback
+            (
+                fulfill_desires,
+                color_system,
+            ).chain(),
+
+            // Pathfinding systems
+            (
+                resource_discovery_system,
+                target_selection_system,
+                steering_navigation_system,
+                target_cleanup_system,
+            ),
+
+            // Analysis and debugging systems (lower priority)
+            (
+                analyze_rumor_diffusion,
+                analyze_movement_patterns,
+                analyze_pathfinding_behavior,
+            ),
         ))
         .run();
 }
