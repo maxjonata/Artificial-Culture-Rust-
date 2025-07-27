@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::components::knowledge::KnowledgeBase;
-use crate::components::needs::{Needs, Desire};
+use crate::components::needs::{BasicNeeds, Desire};
 use crate::components::npc::{Npc, Personality};
 use crate::components::resources::{RumorTimer, GameConstants, ColorConstants};
 
@@ -17,7 +17,7 @@ impl Plugin for CustomComponentsPlugin {
             // Knowledge components
             .register_type::<KnowledgeBase>()
             // Needs components
-            .register_type::<Needs>()
+            .register_type::<BasicNeeds>()
             .register_type::<Desire>()
             // Resources
             .register_type::<RumorTimer>()

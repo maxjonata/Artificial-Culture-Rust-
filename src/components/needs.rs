@@ -3,15 +3,15 @@ use bevy::prelude::*;
 /// Component representing an NPC's basic needs
 #[derive(Component, Reflect, PartialEq, Debug)]
 #[reflect(Component)]
-pub struct Needs {
+pub struct BasicNeeds {
     /// Hunger level
-    pub fome: f32,
+    pub hunger: f32,
     /// Thirst level
-    pub sede: f32,
+    pub thirst: f32,
     /// Fatigue level
-    pub fadiga: f32,
+    pub fatigue: f32,
     /// Safety level
-    pub seguranca: f32,
+    pub safety: f32,
     /// Social need level
     pub social: f32,
 }

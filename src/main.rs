@@ -17,6 +17,7 @@ use crate::components::resources::{GameConstants, ColorConstants};
 use crate::systems::rumor::{inject_rumor_system, handle_rumor_spread};
 use crate::systems::movement::movement_system;
 use crate::systems::visual::color_system;
+use crate::systems::needs::{decay_basic_needs, handle_social_interactions};
 use crate::entity_builders::spawn_test_npcs;
 
 // --- Sistemas ---
@@ -50,8 +51,9 @@ fn main() {
         .add_systems(Startup, setup_simulation)
         .add_systems(Update, (
             inject_rumor_system,
-            (handle_rumor_spread, color_system).chain(),
+            (handle_rumor_spread, handle_social_interactions, color_system).chain(),
             movement_system,
+            decay_basic_needs,
         ))
         .run();
 }

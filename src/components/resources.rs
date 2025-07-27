@@ -17,6 +17,16 @@ pub struct GameConstants {
     pub npc_speed: f32,
     /// Social interaction distance
     pub social_distance: f32,
+    /// Decay rate for hunger
+    pub hunger_decay: f32,
+    /// Decay rate for thirst
+    pub thirst_decay: f32,
+    /// Regeneration rate for fatigue
+    pub fatigue_regen: f32,
+    /// Decay rate for safety
+    pub safety_decay: f32,
+    /// Decay rate to need for social interaction
+    pub social_decay: f32,
 }
 
 impl Default for GameConstants {
@@ -26,6 +36,11 @@ impl Default for GameConstants {
             npc_radius: 15.0,
             npc_speed: 200.0,
             social_distance: 100.0,
+            hunger_decay: 0.1,
+            thirst_decay: 0.1,
+            fatigue_regen: 0.1,
+            safety_decay: 0.1,
+            social_decay: 0.1,
         }
     }
 }
