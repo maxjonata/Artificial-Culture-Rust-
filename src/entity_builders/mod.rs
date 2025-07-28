@@ -1,5 +1,4 @@
-pub mod npc;
-pub mod environment;
+pub mod entity_builders_environment;
+pub mod entity_builders_npc;
 
-// Re-export entity builders
-pub use npc::*;
+pub use entity_builders_npc::*;

@@ -1,35 +1,19 @@
+use bevy::ecs::event::EventWriter;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::Velocity;
 
-use crate::components::npc::Npc;
-use crate::components::needs::Desire;
-use crate::components::resources::GameConstants;
-
-// ML-HOOK: Events for quantifiable movement behavior tracking and reward calculation
-#[derive(Event)]
-pub struct BoundaryCollisionEvent {
-    pub entity: Entity,
-    pub position: Vec2,
-    pub old_direction: Vec2,
-    pub new_direction: Vec2,
-    pub collision_normal: Vec2, // ML-HOOK: Quantifiable collision data
-}
-
-#[derive(Event)]
-pub struct MovementBehaviorEvent {
-    pub entity: Entity,
-    pub current_desire: Desire,
-    pub velocity: Vec2,
-    pub movement_efficiency: f32, // ML-HOOK: Performance metric for learning
-}
+use crate::components::components_needs::Desire;
+use crate::components::components_npc::Npc;
+use crate::components::components_resources::GameConstants;
+use crate::systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
 
 /// Utility function implementing boundary physics based on elastic collision theory
 /// System based on Elastic Collision Theory - perfect reflection for containment
 fn calculate_bounds(window: &Window, npc_radius: f32) -> Vec2 {
     Vec2::new(
         window.width() / 2.0 - npc_radius,
-        window.height() / 2.0 - npc_radius
+        window.height() / 2.0 - npc_radius,
     )
 }
 
@@ -84,7 +68,7 @@ fn calculate_desire_influenced_velocity(
     current_velocity: Vec2,
     desire: &Desire,
     base_speed: f32,
-    time_delta: f32
+    time_delta: f32,
 ) -> Vec2 {
     // ML-HOOK: Different desires could influence movement patterns for learning
     let speed_multiplier = match desire {
@@ -137,7 +121,7 @@ pub fn movement_system(
     mut boundary_events: EventWriter<BoundaryCollisionEvent>,
     mut movement_events: EventWriter<MovementBehaviorEvent>,
 ) {
-    let Ok(window) = windows.get_single() else {
+    let Ok(window) = windows.single() else {
         return; // Exit early if no window found
     };
     let bounds = calculate_bounds(window, game_constants.npc_radius);
@@ -152,7 +136,7 @@ pub fn movement_system(
             velocity.linvel,
             desire,
             game_constants.npc_speed,
-            time_delta
+            time_delta,
         );
 
         // Check for boundary collisions and apply reflection if needed
@@ -161,7 +145,7 @@ pub fn movement_system(
             let new_velocity = reflected_direction * desire_velocity.length();
 
             // ML-HOOK: Fire event for quantifiable boundary collision tracking
-            boundary_events.send(BoundaryCollisionEvent {
+            boundary_events.write(BoundaryCollisionEvent {
                 entity,
                 position,
                 old_direction: current_direction,
@@ -178,7 +162,7 @@ pub fn movement_system(
         // ML-HOOK: Calculate and track movement efficiency metrics
         let efficiency = calculate_movement_efficiency(velocity.linvel, game_constants.npc_speed);
 
-        movement_events.send(MovementBehaviorEvent {
+        movement_events.write(MovementBehaviorEvent {
             entity,
             current_desire: *desire,
             velocity: velocity.linvel,

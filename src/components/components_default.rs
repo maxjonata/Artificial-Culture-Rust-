@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 
-use crate::components::knowledge::KnowledgeBase;
-use crate::components::needs::{BasicNeeds, Desire, DesireThresholds, DesirePriorities};
-use crate::components::npc::{Npc, Personality};
-use crate::components::environment::{Well, Restaurant, Hotel, SafeZone, InteractableResource, ResourceType};
-use crate::components::pathfinding::{PathTarget, SteeringBehavior, ResourceMemory};
-use crate::components::resources::{RumorTimer, GameConstants, ColorConstants};
+use crate::components::components_environment::{Hotel, InteractableResource, ResourceType, Restaurant, SafeZone, Well};
+use crate::components::components_knowledge::KnowledgeBase;
+use crate::components::components_needs::{BasicNeeds, Desire, DesirePriorities, DesireThresholds};
+use crate::components::components_npc::{Npc, Personality};
+use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
+use crate::components::components_resources::{ColorConstants, GameConstants, RumorTimer};
 
 /// Plugin for registering all custom components with Bevy's reflection system
 pub struct CustomComponentsPlugin;
@@ -45,13 +45,6 @@ impl Plugin for CustomComponentsPlugin {
 // DEFAULT IMPLEMENTATIONS FOR ALL COMPONENTS
 // ============================================================================
 
-impl Default for KnowledgeBase {
-    fn default() -> Self {
-        Self {
-            knows_rumor: false,
-        }
-    }
-}
 
 impl Default for BasicNeeds {
     fn default() -> Self {

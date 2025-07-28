@@ -1,30 +1,14 @@
+use crate::components::components_environment::{Hotel, InteractableResource, ResourceType, Restaurant, SafeZone, Well};
+use crate::components::components_needs::{BasicNeeds, Desire};
+use crate::components::{components_npc::Npc, components_resources::GameConstants};
+use crate::systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionEvent};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::CollisionEvent;
-use crate::components::{Npc, GameConstants};
-use crate::components::needs::{BasicNeeds, Desire};
-use crate::components::environment::{Well, Restaurant, Hotel, SafeZone, InteractableResource, ResourceType};
-
-// ML-HOOK: Events for quantifiable resource interaction tracking and reward calculation
-#[derive(Event)]
-pub struct ResourceInteractionEvent {
-    pub npc_entity: Entity,
-    pub resource_entity: Entity,
-    pub resource_type: ResourceType,
-    pub satisfaction_gained: f32,
-    pub resource_consumed: f32, // ML-HOOK: Quantifiable resource usage
-}
-
-#[derive(Event)]
-pub struct ResourceDepletionEvent {
-    pub resource_entity: Entity,
-    pub resource_type: ResourceType,
-    pub remaining_capacity: f32,
-}
 
 /// Utility function to calculate satisfaction gained from resource interaction
 /// System based on Diminishing Returns Theory - satisfaction decreases with higher current levels
 fn calculate_satisfaction_gain(current_need: f32, base_gain: f32) -> f32 {
-    // Diminishing returns: more satisfaction when need is higher
+    // Diminishing returns: more satisfaction when a need is higher
     let need_factor = (100.0 - current_need) / 100.0; // 0.0 to 1.0
     base_gain * (0.5 + need_factor * 0.5) // Minimum 50% gain, up to 100%
 }
@@ -43,16 +27,16 @@ pub fn handle_well_interactions(
             // Try to match NPC with Well
             if let (Ok((npc_entity, mut needs, desire)), Ok((well_entity, mut well, mut resource))) =
                 (npc_query.get_mut(*entity1), well_query.get_mut(*entity2)) {
-                    handle_water_interaction(
-                        npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_water_interaction(
+                    npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             } else if let (Ok((npc_entity, mut needs, desire)), Ok((well_entity, mut well, mut resource))) =
                 (npc_query.get_mut(*entity2), well_query.get_mut(*entity1)) {
-                    handle_water_interaction(
-                        npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_water_interaction(
+                    npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             }
         }
     }
@@ -83,7 +67,7 @@ fn handle_water_interaction(
         resource.current_interactions += 1;
 
         // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.send(ResourceInteractionEvent {
+        interaction_events.write(ResourceInteractionEvent {
             npc_entity,
             resource_entity: well_entity,
             resource_type: ResourceType::Water,
@@ -92,7 +76,7 @@ fn handle_water_interaction(
         });
 
         if well.water_capacity <= 0.0 {
-            depletion_events.send(ResourceDepletionEvent {
+            depletion_events.write(ResourceDepletionEvent {
                 resource_entity: well_entity,
                 resource_type: ResourceType::Water,
                 remaining_capacity: 0.0,
@@ -118,16 +102,16 @@ pub fn handle_restaurant_interactions(
             // Try to match NPC with Restaurant
             if let (Ok((npc_entity, mut needs, desire)), Ok((restaurant_entity, mut restaurant, mut resource))) =
                 (npc_query.get_mut(*entity1), restaurant_query.get_mut(*entity2)) {
-                    handle_food_interaction(
-                        npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_food_interaction(
+                    npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             } else if let (Ok((npc_entity, mut needs, desire)), Ok((restaurant_entity, mut restaurant, mut resource))) =
                 (npc_query.get_mut(*entity2), restaurant_query.get_mut(*entity1)) {
-                    handle_food_interaction(
-                        npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_food_interaction(
+                    npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             }
         }
     }
@@ -158,7 +142,7 @@ fn handle_food_interaction(
         resource.current_interactions += 1;
 
         // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.send(ResourceInteractionEvent {
+        interaction_events.write(ResourceInteractionEvent {
             npc_entity,
             resource_entity: restaurant_entity,
             resource_type: ResourceType::Food,
@@ -167,7 +151,7 @@ fn handle_food_interaction(
         });
 
         if restaurant.food_capacity <= 0.0 {
-            depletion_events.send(ResourceDepletionEvent {
+            depletion_events.write(ResourceDepletionEvent {
                 resource_entity: restaurant_entity,
                 resource_type: ResourceType::Food,
                 remaining_capacity: 0.0,
@@ -193,16 +177,16 @@ pub fn handle_hotel_interactions(
             // Try to match NPC with Hotel
             if let (Ok((npc_entity, mut needs, desire)), Ok((hotel_entity, mut hotel, mut resource))) =
                 (npc_query.get_mut(*entity1), hotel_query.get_mut(*entity2)) {
-                    handle_rest_interaction(
-                        npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_rest_interaction(
+                    npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             } else if let (Ok((npc_entity, mut needs, desire)), Ok((hotel_entity, mut hotel, mut resource))) =
                 (npc_query.get_mut(*entity2), hotel_query.get_mut(*entity1)) {
-                    handle_rest_interaction(
-                        npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
-                        &mut interaction_events, &mut depletion_events
-                    );
+                handle_rest_interaction(
+                    npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
+                    &mut interaction_events, &mut depletion_events,
+                );
             }
         }
     }
@@ -233,7 +217,7 @@ fn handle_rest_interaction(
         resource.current_interactions += 1;
 
         // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.send(ResourceInteractionEvent {
+        interaction_events.write(ResourceInteractionEvent {
             npc_entity,
             resource_entity: hotel_entity,
             resource_type: ResourceType::Rest,
@@ -242,7 +226,7 @@ fn handle_rest_interaction(
         });
 
         if hotel.rest_capacity <= 0.0 {
-            depletion_events.send(ResourceDepletionEvent {
+            depletion_events.write(ResourceDepletionEvent {
                 resource_entity: hotel_entity,
                 resource_type: ResourceType::Rest,
                 remaining_capacity: 0.0,

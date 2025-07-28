@@ -1,7 +1,12 @@
 mod components;
 mod systems;
 mod entity_builders;
+mod utils;
 
+use crate::components::components_default::CustomComponentsPlugin;
+use crate::components::components_resources::{ColorConstants, GameConstants, RumorTimer};
+use crate::components::*;
+use crate::entity_builders::{entity_builders_environment::spawn_environmental_resources, entity_builders_npc::spawn_test_npcs};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy_inspector_egui::{
@@ -9,42 +14,36 @@ use bevy_inspector_egui::{
     quick::WorldInspectorPlugin,
 };
 use bevy_rapier2d::prelude::*;
+use systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionEvent};
+use systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
+// Import all the ML-ready events for future integration
+use systems::events::events_needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
+use systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
+use systems::events::events_rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
 
-use crate::components::default::CustomComponentsPlugin;
-use crate::components::resources::{ColorConstants, GameConstants, RumorTimer};
-use crate::components::*;
-use crate::entity_builders::{environment::spawn_environmental_resources, spawn_test_npcs};
-
-use crate::systems::environment::{
+use crate::systems::systems_environment::{
     handle_hotel_interactions,
     handle_restaurant_interactions,
     handle_well_interactions,
-    regenerate_environmental_resources
+    regenerate_environmental_resources,
 };
-use crate::systems::movement::{analyze_movement_patterns, movement_system};
-use crate::systems::needs::{
+use crate::systems::systems_movement::{analyze_movement_patterns, movement_system};
+use crate::systems::systems_needs::{
     decay_basic_needs,
     fulfill_desires,
     handle_social_interactions,
-    update_desires_from_needs
+    update_desires_from_needs,
 };
-use crate::systems::pathfinding::{
+use crate::systems::systems_pathfinding::{
     analyze_pathfinding_behavior,
     resource_discovery_system,
     steering_navigation_system,
     target_cleanup_system,
-    target_selection_system
+    target_selection_system,
 };
 // Import all the systems we need
-use crate::systems::rumor::{analyze_rumor_diffusion, handle_rumor_spread, inject_rumor_system};
-use crate::systems::visual::color_system;
-
-use crate::systems::environment::{ResourceDepletionEvent, ResourceInteractionEvent};
-use crate::systems::movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
-// Import all the ML-ready events for future integration
-use crate::systems::needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
-use crate::systems::pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
-use crate::systems::rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
+use crate::systems::systems_rumor::{analyze_rumor_diffusion, handle_rumor_spread, inject_rumor_system};
+use crate::systems::systems_visual::color_system;
 
 fn setup_simulation(
     mut commands: Commands,
@@ -63,7 +62,7 @@ fn setup_simulation(
             &mut commands,
             &game_constants,
             window.width(),
-            window.height()
+            window.height(),
         );
     }
 }

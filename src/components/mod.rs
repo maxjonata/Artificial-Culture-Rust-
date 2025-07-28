@@ -1,14 +1,15 @@
-pub mod default;
-pub mod npc;
-pub mod knowledge;
-pub mod needs;
-pub mod resources;
-pub mod environment;
+#![allow(unused_imports)]
 
-pub mod pathfinding;
+pub mod components_default;
+pub mod components_environment;
+pub mod components_knowledge;
+pub mod components_needs;
+pub mod components_npc;
+pub mod components_pathfinding;
+pub mod components_resources;
 
-// Re-export components from specific modules
-pub use npc::*;
-pub use knowledge::*;
-pub use resources::*;
-pub use pathfinding::*;
+// Re-export commonly used types for easier access
+pub use components_default::*;
+pub use components_knowledge::*;
+pub use components_npc::*;
+pub use components_resources::*;

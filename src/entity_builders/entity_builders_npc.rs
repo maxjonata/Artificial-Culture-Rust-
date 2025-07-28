@@ -1,9 +1,9 @@
+use crate::components::components_needs::{BasicNeeds, Desire, DesireThresholds};
+use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
+use crate::components::{components_knowledge::KnowledgeBase, components_npc::Npc, components_npc::Personality, components_resources::GameConstants, ColorConstants};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
-use crate::components::{Npc, Personality, KnowledgeBase, GameConstants, ColorConstants};
-use crate::components::needs::{BasicNeeds, Desire, DesireThresholds};
-use crate::components::pathfinding::{PathTarget, SteeringBehavior, ResourceMemory};
 
 /// Builder function to spawn an NPC entity with all necessary Components
 pub fn spawn_npc(
@@ -18,7 +18,7 @@ pub fn spawn_npc(
     // Generate random initial velocity for autonomous movement
     let initial_velocity = Vec2::new(
         rng.random_range(-1.0..=1.0),
-        rng.random_range(-1.0..=1.0)
+        rng.random_range(-1.0..=1.0),
     ).normalize_or_zero() * game_constants.npc_speed;
 
     // Create the base entity
@@ -76,7 +76,7 @@ pub fn spawn_npc(
         },
         Damping {
             linear_damping: 0.1, // Reduced damping for better movement
-            angular_damping: 0.8
+            angular_damping: 0.8,
         },
     ));
 }
@@ -92,11 +92,11 @@ pub fn spawn_test_npcs(
     for i in 0..game_constants.num_npcs {
         let position = Vec2::new(
             rng.random_range(-400.0..=400.0),
-            rng.random_range(-300.0..=300.0)
+            rng.random_range(-300.0..=300.0),
         );
-        
+
         spawn_npc(commands, game_constants, color_constants, position, i);
     }
-    
+
     println!("Simulação iniciada com {} NPCs.", game_constants.num_npcs);
 }

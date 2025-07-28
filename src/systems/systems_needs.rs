@@ -1,33 +1,9 @@
+use crate::components::components_needs::{BasicNeeds, Desire, DesireThresholds};
+use crate::components::{components_npc::Npc, components_resources::GameConstants};
+use crate::systems::events::events_needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
+use bevy::ecs::event::EventWriter;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::CollisionEvent;
-use crate::components::{GameConstants, Npc};
-use crate::components::needs::{BasicNeeds, Desire, DesireThresholds};
-
-// ML-HOOK: Events for quantifiable behavior tracking and reward calculation
-#[derive(Event)]
-pub struct NeedDecayEvent {
-    pub entity: Entity,
-    pub hunger_change: f32,
-    pub thirst_change: f32,
-    pub fatigue_change: f32,
-    pub safety_change: f32,
-    pub social_change: f32,
-}
-
-#[derive(Event)]
-pub struct DesireChangeEvent {
-    pub entity: Entity,
-    pub old_desire: Desire,
-    pub new_desire: Desire,
-    pub urgency_score: f32, // ML-HOOK: Quantifiable urgency for reward calculation
-}
-
-#[derive(Event)]
-pub struct SocialInteractionEvent {
-    pub entity_1: Entity,
-    pub entity_2: Entity,
-    pub social_boost: f32,
-}
 
 /// Utility function to apply decay to needs based on homeostatic drive theory
 /// System based on Homeostatic Drive Theory - organisms maintain internal balance
@@ -119,7 +95,7 @@ pub fn decay_basic_needs(
             apply_needs_decay(&mut needs, &game_constants);
 
         // ML-HOOK: Fire event for quantifiable state change tracking
-        need_decay_events.send(NeedDecayEvent {
+        need_decay_events.write(NeedDecayEvent {
             entity,
             hunger_change,
             thirst_change,
@@ -148,7 +124,7 @@ pub fn handle_social_interactions(
                 let boost2 = increase_social_need(&mut needs2, SOCIAL_INTERACTION_BOOST);
 
                 // ML-HOOK: Fire events for quantifiable interaction tracking
-                social_events.send(SocialInteractionEvent {
+                social_events.write(SocialInteractionEvent {
                     entity_1: *entity1,
                     entity_2: *entity2,
                     social_boost: (boost1 + boost2) / 2.0, // Average boost for symmetric interaction
@@ -173,7 +149,7 @@ pub fn update_desires_from_needs(
             info!("NPC desire changed from {:?} to {:?} with urgency {:.2}", *current_desire, new_desire, urgency_score);
 
             // ML-HOOK: Fire event for quantifiable behavior change tracking
-            desire_events.send(DesireChangeEvent {
+            desire_events.write(DesireChangeEvent {
                 entity,
                 old_desire: current_desire.clone(),
                 new_desire: new_desire.clone(),
@@ -203,7 +179,7 @@ pub fn fulfill_desires(
                         *desire = Desire::Wander;
                     }
                 }
-            },
+            }
             Desire::FindWater => {
                 // Simulate finding and drinking water
                 if needs.thirst < 100.0 {
@@ -215,7 +191,7 @@ pub fn fulfill_desires(
                         *desire = Desire::Wander;
                     }
                 }
-            },
+            }
             Desire::Rest => {
                 // Simulate resting and recovering from fatigue
                 if needs.fatigue > 0.0 {
@@ -227,7 +203,7 @@ pub fn fulfill_desires(
                         *desire = Desire::Wander;
                     }
                 }
-            },
+            }
             Desire::FindSafety => {
                 // Simulate finding a safe location
                 if needs.safety < 100.0 {
@@ -239,14 +215,14 @@ pub fn fulfill_desires(
                         *desire = Desire::Wander;
                     }
                 }
-            },
+            }
             Desire::Socialize => {
                 // Social interaction is handled by collision system
                 // This is just a fallback in case no interactions occur
                 if needs.social > 50.0 {
                     *desire = Desire::Wander;
                 }
-            },
+            }
             Desire::Wander => {
                 // No specific action needed for wandering
                 // This is the default state when no urgent needs exist

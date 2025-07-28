@@ -1,8 +1,8 @@
+use crate::components::components_environment::{Hotel, InteractableResource, ResourceType, Restaurant, SafeZone, Well};
+use crate::components::components_resources::GameConstants;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
-use crate::components::environment::{Well, Restaurant, Hotel, SafeZone, InteractableResource, ResourceType};
-use crate::components::resources::GameConstants;
 
 /// Builder function to spawn a well (water source) entity
 /// System based on Environmental Psychology - resource placement affects accessibility
@@ -129,12 +129,12 @@ pub fn spawn_environmental_resources(
     window_height: f32,
 ) {
     let mut rng = rand::rng();
-    
+
     // Calculate spawn boundaries (leaving margin from edges)
     let margin = 100.0;
     let x_range = -window_width / 2.0 + margin..=window_width / 2.0 - margin;
     let y_range = -window_height / 2.0 + margin..=window_height / 2.0 - margin;
-    
+
     // Spawn wells (water sources)
     for i in 0..game_constants.num_wells {
         let position = Vec2::new(
@@ -143,7 +143,7 @@ pub fn spawn_environmental_resources(
         );
         spawn_well(commands, position, i);
     }
-    
+
     // Spawn restaurants (food sources)
     for i in 0..game_constants.num_restaurants {
         let position = Vec2::new(
@@ -152,7 +152,7 @@ pub fn spawn_environmental_resources(
         );
         spawn_restaurant(commands, position, i);
     }
-    
+
     // Spawn hotels (rest sources)
     for i in 0..game_constants.num_hotels {
         let position = Vec2::new(
@@ -161,7 +161,7 @@ pub fn spawn_environmental_resources(
         );
         spawn_hotel(commands, position, i);
     }
-    
+
     // Spawn safe zones (safety sources)
     for i in 0..game_constants.num_safe_zones {
         let position = Vec2::new(

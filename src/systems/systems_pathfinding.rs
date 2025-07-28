@@ -1,38 +1,13 @@
+use bevy::ecs::event::EventWriter;
 use bevy::prelude::*;
 use rand::prelude::*;
 
-use crate::components::npc::Npc;
-use crate::components::needs::{BasicNeeds, Desire};
-use crate::components::environment::{Well, Restaurant, Hotel, SafeZone, ResourceType};
-use crate::components::pathfinding::{PathTarget, SteeringBehavior, ResourceMemory};
-use crate::components::resources::GameConstants;
-
-// ML-HOOK: Events for quantifiable pathfinding behavior tracking and reward calculation
-#[derive(Event)]
-pub struct PathTargetSetEvent {
-    pub npc_entity: Entity,
-    pub target_position: Vec2,
-    pub target_entity: Option<Entity>,
-    pub target_type: ResourceType,
-    pub distance_to_target: f32, // ML-HOOK: Quantifiable pathfinding efficiency
-}
-
-#[derive(Event)]
-pub struct PathTargetReachedEvent {
-    pub npc_entity: Entity,
-    pub target_position: Vec2,
-    pub target_entity: Option<Entity>,
-    pub time_to_reach: f32, // ML-HOOK: Performance metric for navigation efficiency
-}
-
-#[derive(Event)]
-pub struct ResourceDiscoveredEvent {
-    pub npc_entity: Entity,
-    pub resource_position: Vec2,
-    pub resource_entity: Entity,
-    pub resource_type: ResourceType,
-    pub discovery_distance: f32, // ML-HOOK: Spatial cognition metrics
-}
+use crate::components::components_environment::{Hotel, ResourceType, Restaurant, SafeZone, Well};
+use crate::components::components_needs::{BasicNeeds, Desire};
+use crate::components::components_npc::Npc;
+use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
+use crate::components::components_resources::GameConstants;
+use crate::systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
 
 /// Utility function implementing Craig Reynolds' Seek steering behavior
 /// System based on Steering Behaviors for Autonomous Characters
@@ -130,7 +105,7 @@ pub fn resource_discovery_system(
             if distance <= memory.discovery_radius && !memory.known_wells.contains(&resource_pos) {
                 memory.known_wells.push(resource_pos);
 
-                discovery_events.send(ResourceDiscoveredEvent {
+                discovery_events.write(ResourceDiscoveredEvent {
                     npc_entity,
                     resource_position: resource_pos,
                     resource_entity,
@@ -150,7 +125,7 @@ pub fn resource_discovery_system(
             if distance <= memory.discovery_radius && !memory.known_restaurants.contains(&resource_pos) {
                 memory.known_restaurants.push(resource_pos);
 
-                discovery_events.send(ResourceDiscoveredEvent {
+                discovery_events.write(ResourceDiscoveredEvent {
                     npc_entity,
                     resource_position: resource_pos,
                     resource_entity,
@@ -170,7 +145,7 @@ pub fn resource_discovery_system(
             if distance <= memory.discovery_radius && !memory.known_hotels.contains(&resource_pos) {
                 memory.known_hotels.push(resource_pos);
 
-                discovery_events.send(ResourceDiscoveredEvent {
+                discovery_events.write(ResourceDiscoveredEvent {
                     npc_entity,
                     resource_position: resource_pos,
                     resource_entity,
@@ -190,7 +165,7 @@ pub fn resource_discovery_system(
             if distance <= memory.discovery_radius && !memory.known_safe_zones.contains(&resource_pos) {
                 memory.known_safe_zones.push(resource_pos);
 
-                discovery_events.send(ResourceDiscoveredEvent {
+                discovery_events.write(ResourceDiscoveredEvent {
                     npc_entity,
                     resource_position: resource_pos,
                     resource_entity,
@@ -244,7 +219,7 @@ pub fn target_selection_system(
             path_target.target_set_time = time.elapsed_secs();
 
             // ML-HOOK: Fire event for quantifiable target selection tracking
-            target_events.send(PathTargetSetEvent {
+            target_events.write(PathTargetSetEvent {
                 npc_entity,
                 target_position: target_pos,
                 target_entity: None,
@@ -285,7 +260,7 @@ pub fn steering_navigation_system(
 
             if distance_to_target <= path_target.arrival_threshold {
                 // Target reached!
-                reached_events.send(PathTargetReachedEvent {
+                reached_events.write(PathTargetReachedEvent {
                     npc_entity,
                     target_position: path_target.target_position,
                     target_entity: path_target.target_entity,
@@ -342,7 +317,7 @@ pub fn target_cleanup_system(
         // Find the NPC that reached its target and clear it
         for mut path_target in npc_query.iter_mut() {
             if path_target.has_target &&
-               path_target.target_position.distance(event.target_position) < 1.0 {
+                path_target.target_position.distance(event.target_position) < 1.0 {
                 path_target.has_target = false;
                 path_target.target_entity = None;
                 break;

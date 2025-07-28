@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::components::knowledge::KnowledgeBase;
-use crate::components::npc::Npc;
-use crate::components::resources::ColorConstants;
+use crate::components::components_resources::ColorConstants;
+use crate::components::components_knowledge::KnowledgeBase;
+use crate::components::components_npc::Npc;
 
 /// System for updating NPC colors based on rumor knowledge
 pub fn color_system(

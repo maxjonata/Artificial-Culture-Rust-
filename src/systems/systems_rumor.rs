@@ -1,35 +1,13 @@
+use bevy::ecs::event::EventWriter;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 
-use crate::components::knowledge::KnowledgeBase;
-use crate::components::npc::Npc;
-use crate::components::npc::Personality;
-use crate::components::resources::RumorTimer;
-
-// ML-HOOK: Events for quantifiable rumor dynamics tracking and reward calculation
-#[derive(Event)]
-pub struct RumorInjectionEvent {
-    pub target_entity: Entity,
-    pub injection_time: f32,
-}
-
-#[derive(Event)]
-pub struct RumorSpreadEvent {
-    pub spreader_entity: Entity,
-    pub receiver_entity: Entity,
-    pub spreader_openness: f32,
-    pub receiver_openness: f32,
-    pub spread_probability: f32, // ML-HOOK: Quantifiable spread dynamics
-}
-
-#[derive(Event)]
-pub struct RumorSpreadAttemptEvent {
-    pub spreader_entity: Entity,
-    pub receiver_entity: Entity,
-    pub success: bool,
-    pub calculated_probability: f32, // ML-HOOK: Track all attempts for learning
-}
+use crate::components::components_knowledge::KnowledgeBase;
+use crate::components::components_npc::Npc;
+use crate::components::components_npc::Personality;
+use crate::components::components_resources::RumorTimer;
+use crate::systems::events::events_rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
 
 /// Utility function implementing Social Influence Theory for rumor transmission
 /// System based on Social Influence Theory and Network Diffusion Models
@@ -51,7 +29,7 @@ fn attempt_rumor_spread(
     spreader: &KnowledgeBase,
     receiver: &mut KnowledgeBase,
     spreader_personality: &Personality,
-    receiver_personality: &Personality
+    receiver_personality: &Personality,
 ) -> (bool, f32) {
     // Only spread if spreader knows and receiver doesn't know
     if !spreader.knows_rumor || receiver.knows_rumor {
@@ -61,7 +39,7 @@ fn attempt_rumor_spread(
     // ML-HOOK: Calculate probability using quantifiable personality traits
     let spread_probability = calculate_rumor_spread_probability(
         spreader_personality.openness,
-        receiver_personality.openness
+        receiver_personality.openness,
     );
 
     let mut rng = rand::rng();
@@ -94,7 +72,7 @@ pub fn inject_rumor_system(
             *injected = true;
 
             // ML-HOOK: Fire event for quantifiable injection tracking
-            injection_events.send(RumorInjectionEvent {
+            injection_events.write(RumorInjectionEvent {
                 target_entity: entity,
                 injection_time: time.elapsed_secs(),
             });
@@ -123,11 +101,11 @@ pub fn handle_rumor_spread(
 
                 // Attempt spread from entity1 to entity2
                 let (success_1_to_2, prob_1_to_2) = attempt_rumor_spread(
-                    &knowledge1, &mut knowledge2, personality1, personality2
+                    &knowledge1, &mut knowledge2, personality1, personality2,
                 );
 
                 if knowledge1.knows_rumor && !knowledge2.knows_rumor {
-                    attempt_events.send(RumorSpreadAttemptEvent {
+                    attempt_events.write(RumorSpreadAttemptEvent {
                         spreader_entity: entity1_id,
                         receiver_entity: entity2_id,
                         success: success_1_to_2,
@@ -135,7 +113,7 @@ pub fn handle_rumor_spread(
                     });
 
                     if success_1_to_2 {
-                        spread_events.send(RumorSpreadEvent {
+                        spread_events.write(RumorSpreadEvent {
                             spreader_entity: entity1_id,
                             receiver_entity: entity2_id,
                             spreader_openness: personality1.openness,
@@ -147,11 +125,11 @@ pub fn handle_rumor_spread(
 
                 // Attempt spread from entity2 to entity1 (if not already spread)
                 let (success_2_to_1, prob_2_to_1) = attempt_rumor_spread(
-                    &knowledge2, &mut knowledge1, personality2, personality1
+                    &knowledge2, &mut knowledge1, personality2, personality1,
                 );
 
                 if knowledge2.knows_rumor && !knowledge1.knows_rumor {
-                    attempt_events.send(RumorSpreadAttemptEvent {
+                    attempt_events.write(RumorSpreadAttemptEvent {
                         spreader_entity: entity2_id,
                         receiver_entity: entity1_id,
                         success: success_2_to_1,
@@ -159,7 +137,7 @@ pub fn handle_rumor_spread(
                     });
 
                     if success_2_to_1 {
-                        spread_events.send(RumorSpreadEvent {
+                        spread_events.write(RumorSpreadEvent {
                             spreader_entity: entity2_id,
                             receiver_entity: entity1_id,
                             spreader_openness: personality2.openness,
