@@ -47,19 +47,20 @@ use crate::systems::systems_visual::color_system;
 
 fn setup_simulation(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     game_constants: Res<GameConstants>,
-    color_constants: Res<ColorConstants>,
     windows: Query<&Window>,
 ) {
     commands.spawn(Camera2d);
 
     // Spawn NPCs first
-    spawn_test_npcs(&mut commands, &game_constants, &color_constants);
+    spawn_test_npcs(&mut commands, &asset_server, &game_constants);
 
     // Spawn environmental resources randomly across the space
     if let Ok(window) = windows.single() {
         spawn_environmental_resources(
             &mut commands,
+            &asset_server,
             &game_constants,
             window.width(),
             window.height(),
@@ -81,6 +82,9 @@ fn main() {
         .insert_resource(RumorTimer(Timer::from_seconds(3.0, TimerMode::Once)))
         .insert_resource(GameConstants::default())
         .insert_resource(ColorConstants::default())
+
+        // Register Rapier debug render context for inspector control
+        .register_type::<bevy_rapier2d::render::DebugRenderContext>()
 
         // ML-HOOK: Register all events for quantifiable behavior tracking
         .add_event::<NeedDecayEvent>()

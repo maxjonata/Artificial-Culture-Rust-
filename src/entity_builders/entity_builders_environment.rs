@@ -8,9 +8,14 @@ use rand::prelude::*;
 /// System based on Environmental Psychology - resource placement affects accessibility
 pub fn spawn_well(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     position: Vec2,
     well_id: usize,
 ) {
+    // ML-HOOK: Sprite size matches collider for consistent visual-physical representation
+    let collider_size = 32.0;
+    let sprite_size = Vec2::splat(collider_size * 2.0); // 64x64 sprite for 32 radius collider
+
     commands.spawn((
         Well::default(),
         InteractableResource {
@@ -21,14 +26,14 @@ pub fn spawn_well(
             regeneration_timer: 0.0,
         },
         Sprite {
-            color: Color::srgb(0.2, 0.6, 1.0), // Blue for water
-            custom_size: Some(Vec2::splat(40.0)),
+            image: asset_server.load("well.png"),
+            custom_size: Some(sprite_size),
             ..default()
         },
         Name::new(format!("Well {}", well_id + 1)),
         Transform::from_xyz(position.x, position.y, 0.0),
         RigidBody::Fixed, // Wells don't move
-        Collider::cuboid(20.0, 20.0), // Square collider
+        Collider::cuboid(collider_size, collider_size),
         Sensor, // Allow NPCs to pass through but detect collisions
     ));
 }
@@ -37,9 +42,14 @@ pub fn spawn_well(
 /// System based on Environmental Psychology - resource placement affects accessibility
 pub fn spawn_restaurant(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     position: Vec2,
     restaurant_id: usize,
 ) {
+    // ML-HOOK: Sprite size matches collider for consistent visual-physical representation
+    let collider_size = 32.0;
+    let sprite_size = Vec2::splat(collider_size * 2.0);
+
     commands.spawn((
         Restaurant::default(),
         InteractableResource {
@@ -50,14 +60,14 @@ pub fn spawn_restaurant(
             regeneration_timer: 0.0,
         },
         Sprite {
-            color: Color::srgb(0.8, 0.4, 0.2), // Brown for restaurant
-            custom_size: Some(Vec2::splat(50.0)),
+            image: asset_server.load("restaurant.png"),
+            custom_size: Some(sprite_size),
             ..default()
         },
         Name::new(format!("Restaurant {}", restaurant_id + 1)),
         Transform::from_xyz(position.x, position.y, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(25.0, 25.0),
+        Collider::cuboid(collider_size, collider_size),
         Sensor,
     ));
 }
@@ -66,9 +76,14 @@ pub fn spawn_restaurant(
 /// System based on Environmental Psychology - resource placement affects accessibility
 pub fn spawn_hotel(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     position: Vec2,
     hotel_id: usize,
 ) {
+    // ML-HOOK: Sprite size matches collider for consistent visual-physical representation
+    let collider_size = 32.0;
+    let sprite_size = Vec2::splat(collider_size * 2.0);
+
     commands.spawn((
         Hotel::default(),
         InteractableResource {
@@ -79,14 +94,14 @@ pub fn spawn_hotel(
             regeneration_timer: 0.0,
         },
         Sprite {
-            color: Color::srgb(0.6, 0.3, 0.8), // Purple for hotel
-            custom_size: Some(Vec2::splat(60.0)),
+            image: asset_server.load("hotel.png"),
+            custom_size: Some(sprite_size),
             ..default()
         },
         Name::new(format!("Hotel {}", hotel_id + 1)),
         Transform::from_xyz(position.x, position.y, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(30.0, 30.0),
+        Collider::cuboid(collider_size, collider_size),
         Sensor,
     ));
 }
@@ -95,9 +110,14 @@ pub fn spawn_hotel(
 /// System based on Environmental Psychology - secure spaces affect behavior
 pub fn spawn_safe_zone(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     position: Vec2,
     safe_zone_id: usize,
 ) {
+    // ML-HOOK: Sprite size matches collider for consistent visual-physical representation
+    let collider_size = 32.0;
+    let sprite_size = Vec2::splat(collider_size * 2.0);
+
     commands.spawn((
         SafeZone::default(),
         InteractableResource {
@@ -108,14 +128,14 @@ pub fn spawn_safe_zone(
             regeneration_timer: 0.0,
         },
         Sprite {
-            color: Color::srgb(0.2, 1.0, 0.2), // Bright green for safety
-            custom_size: Some(Vec2::splat(70.0)),
+            image: asset_server.load("safezone.png"),
+            custom_size: Some(sprite_size),
             ..default()
         },
         Name::new(format!("Safe Zone {}", safe_zone_id + 1)),
         Transform::from_xyz(position.x, position.y, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(35.0, 35.0),
+        Collider::cuboid(collider_size, collider_size),
         Sensor,
     ));
 }
@@ -124,6 +144,7 @@ pub fn spawn_safe_zone(
 /// Based on spatial distribution theory for accessible resource placement
 pub fn spawn_environmental_resources(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     game_constants: &GameConstants,
     window_width: f32,
     window_height: f32,
@@ -141,7 +162,7 @@ pub fn spawn_environmental_resources(
             rng.random_range(x_range.clone()),
             rng.random_range(y_range.clone()),
         );
-        spawn_well(commands, position, i);
+        spawn_well(commands, asset_server, position, i);
     }
 
     // Spawn restaurants (food sources)
@@ -150,7 +171,7 @@ pub fn spawn_environmental_resources(
             rng.random_range(x_range.clone()),
             rng.random_range(y_range.clone()),
         );
-        spawn_restaurant(commands, position, i);
+        spawn_restaurant(commands, asset_server, position, i);
     }
 
     // Spawn hotels (rest sources)
@@ -159,7 +180,7 @@ pub fn spawn_environmental_resources(
             rng.random_range(x_range.clone()),
             rng.random_range(y_range.clone()),
         );
-        spawn_hotel(commands, position, i);
+        spawn_hotel(commands, asset_server, position, i);
     }
 
     // Spawn safe zones (safety sources)
@@ -168,7 +189,7 @@ pub fn spawn_environmental_resources(
             rng.random_range(x_range.clone()),
             rng.random_range(y_range.clone()),
         );
-        spawn_safe_zone(commands, position, i);
+        spawn_safe_zone(commands, asset_server, position, i);
     }
 
     info!(

@@ -1,6 +1,6 @@
 use crate::components::components_needs::{BasicNeeds, Desire, DesireThresholds};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
-use crate::components::{components_knowledge::KnowledgeBase, components_npc::Npc, components_npc::Personality, components_resources::GameConstants, ColorConstants};
+use crate::components::{components_knowledge::KnowledgeBase, components_npc::Npc, components_npc::Personality, components_resources::GameConstants};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
@@ -8,8 +8,8 @@ use rand::prelude::*;
 /// Builder function to spawn an NPC entity with all necessary Components
 pub fn spawn_npc(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     game_constants: &GameConstants,
-    color_constants: &ColorConstants,
     position: Vec2,
     npc_id: usize,
 ) {
@@ -48,10 +48,12 @@ pub fn spawn_npc(
     ));
 
     // Visual components - rendering and identification
+    // ML-HOOK: Sprite size matches collider for consistent visual-physical representation
+    let sprite_size = Vec2::splat(game_constants.npc_radius * 2.0);
     commands.entity(entity).insert((
         Sprite {
-            color: color_constants.green,
-            custom_size: Some(Vec2::splat(game_constants.npc_radius * 2.0)),
+            image: asset_server.load("person.png"),
+            custom_size: Some(sprite_size),
             ..default()
         },
         Name::new(format!("NPC {}", npc_id + 1)),
@@ -84,8 +86,8 @@ pub fn spawn_npc(
 /// Builder function to spawn multiple NPCs for testing purposes
 pub fn spawn_test_npcs(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
     game_constants: &GameConstants,
-    color_constants: &ColorConstants,
 ) {
     let mut rng = rand::rng();
 
@@ -95,7 +97,7 @@ pub fn spawn_test_npcs(
             rng.random_range(-300.0..=300.0),
         );
 
-        spawn_npc(commands, game_constants, color_constants, position, i);
+        spawn_npc(commands, asset_server, game_constants, position, i);
     }
 
     println!("Simulação iniciada com {} NPCs.", game_constants.num_npcs);
