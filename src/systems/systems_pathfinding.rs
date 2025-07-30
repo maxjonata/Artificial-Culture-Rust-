@@ -1,377 +1,207 @@
 use bevy::ecs::event::EventWriter;
 use bevy::prelude::*;
-use rand::prelude::*;
+use bevy_rapier2d::prelude::*;
 
+use crate::components::components_constants::GameConstants;
 use crate::components::components_environment::{Hotel, ResourceType, Restaurant, SafeZone, Well};
-use crate::components::components_needs::{BasicNeeds, Desire};
+use crate::components::components_needs::Desire;
 use crate::components::components_npc::Npc;
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
-use crate::components::components_resources::GameConstants;
 use crate::systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
+use crate::utils::helpers::{
+    calculate_seek_force, calculate_wander_force, find_nearest_resource_position,
+    has_reached_target, should_timeout_pursuit,
+};
 
-/// Utility function implementing Craig Reynolds' Seek steering behavior
-/// System based on Steering Behaviors for Autonomous Characters
-fn calculate_seek_force(
-    current_position: Vec2,
-    current_velocity: Vec2,
-    target_position: Vec2,
-    max_speed: f32,
-    max_force: f32,
-) -> Vec2 {
-    // Calculate desired velocity towards target
-    let desired_velocity = (target_position - current_position).normalize_or_zero() * max_speed;
-
-    // Calculate steering force (desired - current)
-    let steering_force = desired_velocity - current_velocity;
-
-    // Limit steering force to maximum
-    if steering_force.length() > max_force {
-        steering_force.normalize() * max_force
-    } else {
-        steering_force
-    }
-}
-
-/// Utility function implementing Wander steering behavior for autonomous movement
-/// System based on Craig Reynolds' Wander steering behavior
-fn calculate_wander_force(
-    current_velocity: Vec2,
-    wander_angle: &mut f32,
-    wander_angle_change: f32,
-    max_speed: f32,
-    max_force: f32,
-) -> Vec2 {
-    // Update wander angle with random change
-    let mut rng = rand::rng();
-    *wander_angle += rng.random_range(-wander_angle_change..=wander_angle_change);
-
-    // Calculate wander direction
-    let wander_direction = Vec2::new(wander_angle.cos(), wander_angle.sin());
-    let desired_velocity = wander_direction * max_speed;
-
-    // Calculate steering force
-    let steering_force = desired_velocity - current_velocity;
-
-    // Limit steering force
-    if steering_force.length() > max_force {
-        steering_force.normalize() * max_force
-    } else {
-        steering_force
-    }
-}
-
-/// Utility function to find nearest resource of a specific type
-/// System based on Spatial Cognition and Mental Maps theory
-fn find_nearest_resource_of_type(
-    memory: &ResourceMemory,
-    current_position: Vec2,
-    resource_type: ResourceType,
-) -> Option<Vec2> {
-    let resource_list = match resource_type {
-        ResourceType::Water => &memory.known_wells,
-        ResourceType::Food => &memory.known_restaurants,
-        ResourceType::Rest => &memory.known_hotels,
-        ResourceType::Safety => &memory.known_safe_zones,
-    };
-
-    resource_list
-        .iter()
-        .min_by(|a, b| {
-            let dist_a = current_position.distance(**a);
-            let dist_b = current_position.distance(**b);
-            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
-        })
-        .copied()
-}
-
-/// System for discovering and memorizing environmental resources
-/// System based on Spatial Cognition and Memory Formation theory
+/// System for discovering resources within range and updating NPCs' memory
+/// Based on Spatial Cognition Theory - agents use spatial memory for resource location
 pub fn resource_discovery_system(
     mut npc_query: Query<(Entity, &Transform, &mut ResourceMemory), With<Npc>>,
-    well_query: Query<(Entity, &Transform), (With<Well>, Without<Npc>)>,
-    restaurant_query: Query<(Entity, &Transform), (With<Restaurant>, Without<Npc>)>,
-    hotel_query: Query<(Entity, &Transform), (With<Hotel>, Without<Npc>)>,
-    safe_zone_query: Query<(Entity, &Transform), (With<SafeZone>, Without<Npc>)>,
+    well_query: Query<&Transform, (With<Well>, Without<Npc>)>,
+    restaurant_query: Query<&Transform, (With<Restaurant>, Without<Npc>)>,
+    hotel_query: Query<&Transform, (With<Hotel>, Without<Npc>)>,
+    safe_zone_query: Query<&Transform, (With<SafeZone>, Without<Npc>)>,
     mut discovery_events: EventWriter<ResourceDiscoveredEvent>,
 ) {
-    for (npc_entity, npc_transform, mut memory) in npc_query.iter_mut() {
-        let npc_pos = npc_transform.translation.truncate();
+    for (entity, npc_transform, mut memory) in npc_query.iter_mut() {
+        let npc_position = npc_transform.translation.truncate();
 
-        // Discover wells
-        for (resource_entity, resource_transform) in well_query.iter() {
-            let resource_pos = resource_transform.translation.truncate();
-            let distance = npc_pos.distance(resource_pos);
-
-            if distance <= memory.discovery_radius && !memory.known_wells.contains(&resource_pos) {
-                memory.known_wells.push(resource_pos);
-
-                discovery_events.write(ResourceDiscoveredEvent {
-                    npc_entity,
-                    resource_position: resource_pos,
-                    resource_entity,
-                    resource_type: ResourceType::Water,
-                    discovery_distance: distance,
-                });
-
-                info!("NPC discovered a well at distance {:.1}", distance);
+        // Discover wells within range
+        for well_transform in well_query.iter() {
+            let well_position = well_transform.translation.truncate();
+            if npc_position.distance(well_position) <= memory.discovery_radius {
+                if !memory.known_wells.contains(&well_position) {
+                    memory.known_wells.push(well_position);
+                    discovery_events.write(ResourceDiscoveredEvent {
+                        npc_entity: entity,
+                        resource_position: well_position,
+                        resource_entity: Entity::PLACEHOLDER, // TODO: Get actual well entity
+                        resource_type: ResourceType::Water,
+                        discovery_distance: npc_position.distance(well_position),
+                    });
+                }
             }
         }
 
-        // Discover restaurants
-        for (resource_entity, resource_transform) in restaurant_query.iter() {
-            let resource_pos = resource_transform.translation.truncate();
-            let distance = npc_pos.distance(resource_pos);
-
-            if distance <= memory.discovery_radius && !memory.known_restaurants.contains(&resource_pos) {
-                memory.known_restaurants.push(resource_pos);
-
-                discovery_events.write(ResourceDiscoveredEvent {
-                    npc_entity,
-                    resource_position: resource_pos,
-                    resource_entity,
-                    resource_type: ResourceType::Food,
-                    discovery_distance: distance,
-                });
-
-                info!("NPC discovered a restaurant at distance {:.1}", distance);
+        // Discover restaurants within range
+        for restaurant_transform in restaurant_query.iter() {
+            let restaurant_position = restaurant_transform.translation.truncate();
+            if npc_position.distance(restaurant_position) <= memory.discovery_radius {
+                if !memory.known_restaurants.contains(&restaurant_position) {
+                    memory.known_restaurants.push(restaurant_position);
+                    discovery_events.write(ResourceDiscoveredEvent {
+                        npc_entity: entity,
+                        resource_position: restaurant_position,
+                        resource_entity: Entity::PLACEHOLDER, // TODO: Get actual restaurant entity
+                        resource_type: ResourceType::Food,
+                        discovery_distance: npc_position.distance(restaurant_position),
+                    });
+                }
             }
         }
 
-        // Discover hotels
-        for (resource_entity, resource_transform) in hotel_query.iter() {
-            let resource_pos = resource_transform.translation.truncate();
-            let distance = npc_pos.distance(resource_pos);
-
-            if distance <= memory.discovery_radius && !memory.known_hotels.contains(&resource_pos) {
-                memory.known_hotels.push(resource_pos);
-
-                discovery_events.write(ResourceDiscoveredEvent {
-                    npc_entity,
-                    resource_position: resource_pos,
-                    resource_entity,
-                    resource_type: ResourceType::Rest,
-                    discovery_distance: distance,
-                });
-
-                info!("NPC discovered a hotel at distance {:.1}", distance);
+        // Discover hotels within range
+        for hotel_transform in hotel_query.iter() {
+            let hotel_position = hotel_transform.translation.truncate();
+            if npc_position.distance(hotel_position) <= memory.discovery_radius {
+                if !memory.known_hotels.contains(&hotel_position) {
+                    memory.known_hotels.push(hotel_position);
+                    discovery_events.write(ResourceDiscoveredEvent {
+                        npc_entity: entity,
+                        resource_position: hotel_position,
+                        resource_entity: Entity::PLACEHOLDER, // TODO: Get actual hotel entity
+                        resource_type: ResourceType::Rest,
+                        discovery_distance: npc_position.distance(hotel_position),
+                    });
+                }
             }
         }
 
-        // Discover safe zones
-        for (resource_entity, resource_transform) in safe_zone_query.iter() {
-            let resource_pos = resource_transform.translation.truncate();
-            let distance = npc_pos.distance(resource_pos);
-
-            if distance <= memory.discovery_radius && !memory.known_safe_zones.contains(&resource_pos) {
-                memory.known_safe_zones.push(resource_pos);
-
-                discovery_events.write(ResourceDiscoveredEvent {
-                    npc_entity,
-                    resource_position: resource_pos,
-                    resource_entity,
-                    resource_type: ResourceType::Safety,
-                    discovery_distance: distance,
-                });
-
-                info!("NPC discovered a safe zone at distance {:.1}", distance);
+        // Discover safe zones within range
+        for safe_zone_transform in safe_zone_query.iter() {
+            let safe_zone_position = safe_zone_transform.translation.truncate();
+            if npc_position.distance(safe_zone_position) <= memory.discovery_radius {
+                if !memory.known_safe_zones.contains(&safe_zone_position) {
+                    memory.known_safe_zones.push(safe_zone_position);
+                    discovery_events.write(ResourceDiscoveredEvent {
+                        npc_entity: entity,
+                        resource_position: safe_zone_position,
+                        resource_entity: Entity::PLACEHOLDER, // TODO: Get actual safe zone entity
+                        resource_type: ResourceType::Safety,
+                        discovery_distance: npc_position.distance(safe_zone_position),
+                    });
+                }
             }
         }
     }
 }
 
-/// System for setting pathfinding targets based on current desires
-/// System based on Goal-Oriented Action Planning (GOAP) theory
-pub fn target_selection_system(
+/// System for setting pathfinding targets based on NPCs' desires and known resources
+/// Based on Goal-Oriented Action Planning - agents plan paths to satisfy needs
+pub fn desire_pathfinding_system(
     mut npc_query: Query<(Entity, &Transform, &Desire, &ResourceMemory, &mut PathTarget), With<Npc>>,
-    time: Res<Time>,
     mut target_events: EventWriter<PathTargetSetEvent>,
+    time: Res<Time>,
 ) {
-    for (npc_entity, transform, desire, memory, mut path_target) in npc_query.iter_mut() {
-        let current_pos = transform.translation.truncate();
+    let current_time = time.elapsed_secs();
 
-        // Only set new target if we don't have one or if desire changed
-        if path_target.has_target {
-            // Check if target should timeout
-            if time.elapsed_secs() - path_target.target_set_time > path_target.max_pursuit_time {
-                path_target.has_target = false;
-                info!("NPC pathfinding target timed out");
-            } else {
-                continue; // Keep current target
-            }
+    for (entity, transform, desire, memory, mut path_target) in npc_query.iter_mut() {
+        let npc_position = transform.translation.truncate();
+
+        // Skip if already has a valid target
+        if path_target.has_target && !should_timeout_pursuit(&path_target, current_time) {
+            continue;
         }
 
-        // ML-HOOK: This target selection could be replaced by an RL agent's action selection
-        let target_resource_type = match desire {
-            Desire::FindWater => ResourceType::Water,
-            Desire::FindFood => ResourceType::Food,
-            Desire::Rest => ResourceType::Rest,
-            Desire::FindSafety => ResourceType::Safety,
-            Desire::Wander | Desire::Socialize => continue, // No specific target needed
+        // Find appropriate target based on desire using helper function
+        let target_position = match *desire {
+            Desire::FindWater => find_nearest_resource_position(npc_position, &memory.known_wells),
+            Desire::FindFood => find_nearest_resource_position(npc_position, &memory.known_restaurants),
+            Desire::Rest => find_nearest_resource_position(npc_position, &memory.known_hotels),
+            Desire::FindSafety => find_nearest_resource_position(npc_position, &memory.known_safe_zones),
+            _ => None, // Wander or Socialize don't have specific targets
         };
 
-        // Find nearest known resource of the desired type
-        if let Some(target_pos) = find_nearest_resource_of_type(memory, current_pos, target_resource_type) {
-            let distance = current_pos.distance(target_pos);
-
+        if let Some(target_pos) = target_position {
             path_target.target_position = target_pos;
-            path_target.target_entity = None; // Could be enhanced to track specific entities
             path_target.has_target = true;
-            path_target.target_set_time = time.elapsed_secs();
+            path_target.target_set_time = current_time;
 
-            // ML-HOOK: Fire event for quantifiable target selection tracking
             target_events.write(PathTargetSetEvent {
-                npc_entity,
+                npc_entity: entity,
                 target_position: target_pos,
-                target_entity: None,
-                target_type: target_resource_type,
-                distance_to_target: distance,
+                target_entity: None, // No specific entity for now
+                target_type: match *desire {
+                    Desire::FindWater => crate::components::components_environment::ResourceType::Water,
+                    Desire::FindFood => crate::components::components_environment::ResourceType::Food,
+                    Desire::Rest => crate::components::components_environment::ResourceType::Rest,
+                    Desire::FindSafety => crate::components::components_environment::ResourceType::Safety,
+                    _ => crate::components::components_environment::ResourceType::Water, // Default
+                },
+                distance_to_target: npc_position.distance(target_pos),
             });
-
-            info!("NPC set pathfinding target: {:?} at distance {:.1}", target_resource_type, distance);
         }
     }
 }
 
-/// System implementing steering behaviors for pathfinding navigation
-/// System based on Craig Reynolds' Steering Behaviors for Autonomous Characters
-pub fn steering_navigation_system(
-    mut npc_query: Query<(Entity, &Transform, &mut bevy_rapier2d::prelude::Velocity, &PathTarget, &mut SteeringBehavior), With<Npc>>,
+/// System implementing steering behaviors for autonomous NPC movement
+/// Based on Craig Reynolds' Boids algorithm and steering behaviors
+pub fn steering_behavior_system(
+    mut npc_query: Query<(Entity, &Transform, &mut Velocity, &mut SteeringBehavior, &PathTarget, &Desire), With<Npc>>,
     game_constants: Res<GameConstants>,
-    time: Res<Time>,
     mut reached_events: EventWriter<PathTargetReachedEvent>,
+    time: Res<Time>,
 ) {
-    for (npc_entity, transform, mut velocity, path_target, mut steering) in npc_query.iter_mut() {
-        let current_pos = transform.translation.truncate();
-        let current_vel = velocity.linvel;
+    let current_time = time.elapsed_secs();
 
-        // Armazenar valores antes de usar a referência mutável
-        let max_steering_force = steering.max_steering_force;
-        let seek_weight = steering.seek_weight;
-        let wander_weight = steering.wander_weight;
-        let wander_angle_change = steering.wander_angle_change;
+    for (entity, transform, mut velocity, mut steering, path_target, desire) in npc_query.iter_mut() {
+        let current_position = transform.translation.truncate();
+        let current_velocity = velocity.linvel;
 
-        // Reset steering forces
-        steering.desired_velocity = Vec2::ZERO;
-        steering.steering_force = Vec2::ZERO;
+        // Check if target has been reached using helper
+        if has_reached_target(current_position, path_target) {
+            reached_events.write(PathTargetReachedEvent {
+                npc_entity: entity,
+                target_position: path_target.target_position,
+                target_entity: path_target.target_entity,
+                time_to_reach: current_time - path_target.target_set_time,
+            });
+            continue;
+        }
 
-        if path_target.has_target {
-            // Check if target is reached
-            let distance_to_target = current_pos.distance(path_target.target_position);
+        let mut steering_force = Vec2::ZERO;
 
-            if distance_to_target <= path_target.arrival_threshold {
-                // Target reached!
-                reached_events.write(PathTargetReachedEvent {
-                    npc_entity,
-                    target_position: path_target.target_position,
-                    target_entity: path_target.target_entity,
-                    time_to_reach: time.elapsed_secs() - path_target.target_set_time,
-                });
-
-                info!("NPC reached pathfinding target at distance {:.1}", distance_to_target);
-                continue;
-            }
-
-            // Calculate seek force towards target
+        if path_target.has_target && !should_timeout_pursuit(&path_target, current_time) {
+            // Calculate seek force towards target using helper
             let seek_force = calculate_seek_force(
-                current_pos,
-                current_vel,
+                current_position,
                 path_target.target_position,
+                current_velocity,
                 game_constants.npc_speed,
-                max_steering_force,
+                steering.max_steering_force,
             );
-
-            steering.steering_force += seek_force * seek_weight;
+            steering_force += seek_force * steering.seek_weight;
         } else {
-            // No target - use wander behavior for autonomous movement
+            // Store values before mutable borrow to avoid borrow checker issues
+            let max_steering_force = steering.max_steering_force;
+            let wander_weight = steering.wander_weight;
+
+            // Calculate wander force for exploration using helper
             let wander_force = calculate_wander_force(
-                current_vel,
-                &mut steering.wander_angle,
-                wander_angle_change,
+                &mut steering,
+                current_velocity,
                 game_constants.npc_speed,
                 max_steering_force,
+                50.0, // wander_radius
+                100.0, // wander_distance
+                time.delta_secs(),
             );
-
-            steering.steering_force += wander_force * wander_weight;
+            steering_force += wander_force * wander_weight;
         }
 
         // Apply steering force to velocity
-        velocity.linvel += steering.steering_force * time.delta_secs();
-
-        // Limit velocity to max speed
-        if velocity.linvel.length() > game_constants.npc_speed {
-            velocity.linvel = velocity.linvel.normalize() * game_constants.npc_speed;
-        }
-
-        // Store desired velocity for analysis
-        steering.desired_velocity = velocity.linvel;
-    }
-}
-
-/// System for clearing reached targets and resetting pathfinding state
-/// System based on Goal Achievement and State Management theory
-pub fn target_cleanup_system(
-    mut npc_query: Query<&mut PathTarget, With<Npc>>,
-    mut reached_events: EventReader<PathTargetReachedEvent>,
-) {
-    for event in reached_events.read() {
-        // Find the NPC that reached its target and clear it
-        for mut path_target in npc_query.iter_mut() {
-            if path_target.has_target &&
-                path_target.target_position.distance(event.target_position) < 1.0 {
-                path_target.has_target = false;
-                path_target.target_entity = None;
-                break;
-            }
-        }
-    }
-}
-
-/// System for analyzing pathfinding performance and behavior
-/// ML-HOOK: Provides quantifiable pathfinding metrics for learning optimization
-pub fn analyze_pathfinding_behavior(
-    query: Query<(&Transform, &PathTarget, &SteeringBehavior), With<Npc>>,
-    mut last_analysis_time: Local<f32>,
-    time: Res<Time>,
-) {
-    *last_analysis_time += time.delta_secs();
-    if *last_analysis_time >= 4.0 {
-        *last_analysis_time = 0.0;
-
-        let mut npcs_with_targets = 0;
-        let mut total_distance_to_targets = 0.0;
-        let mut total_steering_efficiency = 0.0;
-
-        for (transform, path_target, steering) in query.iter() {
-            if path_target.has_target {
-                npcs_with_targets += 1;
-
-                let distance = transform.translation.truncate().distance(path_target.target_position);
-                total_distance_to_targets += distance;
-
-                // Calculate steering efficiency (how aligned current velocity is with desired)
-                let efficiency = if steering.desired_velocity.length() > 0.0 {
-                    steering.desired_velocity.normalize().dot(
-                        if steering.steering_force.length() > 0.0 {
-                            steering.steering_force.normalize()
-                        } else {
-                            Vec2::ZERO
-                        }
-                    ).max(0.0)
-                } else {
-                    0.0
-                };
-                total_steering_efficiency += efficiency;
-            }
-        }
-
-        if npcs_with_targets > 0 {
-            let avg_distance = total_distance_to_targets / npcs_with_targets as f32;
-            let avg_efficiency = total_steering_efficiency / npcs_with_targets as f32;
-
-            debug!(
-                "Pathfinding Analysis - NPCs with targets: {}, Avg distance to target: {:.1}, Avg steering efficiency: {:.2}",
-                npcs_with_targets, avg_distance, avg_efficiency
-            );
-        }
+        steering.steering_force = steering_force;
+        velocity.linvel += steering_force * time.delta_secs();
+        velocity.linvel = velocity.linvel.clamp_length_max(game_constants.npc_speed);
     }
 }

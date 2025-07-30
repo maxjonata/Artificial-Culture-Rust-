@@ -3,164 +3,114 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::Velocity;
 
-use crate::components::components_needs::Desire;
-use crate::components::components_npc::Npc;
-use crate::components::components_resources::GameConstants;
+use crate::components::{components_constants::GameConstants, components_needs::Desire, components_npc::Npc};
 use crate::systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
+use crate::utils::helpers::{
+    calculate_boundary_reflection, calculate_desire_movement_modifier, calculate_movement_efficiency,
+    detect_boundary_collision, get_normalized_direction, reflect_velocity_off_boundary,
+    safe_normalize,
+};
 
-/// Utility function implementing boundary physics based on elastic collision theory
-/// System based on Elastic Collision Theory - perfect reflection for containment
-fn calculate_bounds(window: &Window, npc_radius: f32) -> Vec2 {
-    Vec2::new(
-        window.width() / 2.0 - npc_radius,
-        window.height() / 2.0 - npc_radius,
-    )
-}
+/// System for applying desire-influenced movement to NPCs
+/// **Single Responsibility:** Only handles desire-based velocity modification
+/// Based on Behavioral Psychology - desires influence movement patterns and speed
+pub fn desire_movement_system(
+    mut query: Query<(&mut Velocity, &Desire), With<Npc>>,
+    game_constants: Res<GameConstants>,
+) {
+    for (mut velocity, desire) in query.iter_mut() {
+        let (speed_modifier, _wander_modifier) = calculate_desire_movement_modifier(desire);
+        let adjusted_speed = game_constants.npc_speed * speed_modifier;
 
-/// Utility function to extract normalized direction from current velocity
-/// System based on Classical Mechanics - velocity vector decomposition
-fn get_direction(velocity: &Velocity) -> Vec2 {
-    if velocity.linvel.length_squared() > 0.0 {
-        velocity.linvel.normalize()
-    } else {
-        Vec2::new(1.0, 0.0) // Default direction if velocity is zero
+        // Apply speed adjustment based on current desire
+        if velocity.linvel.length() > adjusted_speed {
+            velocity.linvel = velocity.linvel.normalize() * adjusted_speed;
+        }
     }
 }
 
-/// Utility function implementing elastic reflection for boundary collisions
-/// System based on Law of Reflection - angle of incidence equals angle of reflection
-fn reflect_direction(direction: Vec2, normal: Vec2) -> Vec2 {
-    direction - 2.0 * direction.dot(normal) * normal
-}
-
-/// Utility function for boundary detection with predictive collision system
-/// System based on Predictive Collision Detection for smooth boundary handling
-fn check_boundaries(position: Vec2, direction: Vec2, bounds: Vec2) -> Option<Vec2> {
-    // Check horizontal boundaries (left/right)
-    if position.x < -bounds.x && direction.x < 0.0 {
-        Some(Vec2::new(1.0, 0.0)) // Left wall normal
-    } else if position.x > bounds.x && direction.x > 0.0 {
-        Some(Vec2::new(-1.0, 0.0)) // Right wall normal
-    }
-    // Check vertical boundaries (top/bottom)
-    else if position.y < -bounds.y && direction.y < 0.0 {
-        Some(Vec2::new(0.0, 1.0)) // Bottom wall normal
-    } else if position.y > bounds.y && direction.y > 0.0 {
-        Some(Vec2::new(0.0, -1.0)) // Top wall normal
-    } else {
-        None
-    }
-}
-
-/// Utility function for vector normalization with fallback handling
-/// System based on Linear Algebra - unit vector normalization
-fn normalize_direction(direction: Vec2, fallback: Vec2) -> Vec2 {
-    if direction.length_squared() > 0.0 {
-        direction.normalize()
-    } else {
-        fallback
-    }
-}
-
-/// Utility function implementing desire-driven movement behavior
-/// System based on Goal-Oriented Behavior and Motivational Psychology
-fn calculate_desire_influenced_velocity(
-    current_velocity: Vec2,
-    desire: &Desire,
-    base_speed: f32,
-    time_delta: f32,
-) -> Vec2 {
-    // ML-HOOK: Different desires could influence movement patterns for learning
-    let speed_multiplier = match desire {
-        Desire::FindFood => 1.2,     // Urgency increases speed
-        Desire::FindWater => 1.3,    // Thirst is more urgent
-        Desire::FindSafety => 1.5,   // Safety seeking is fastest
-        Desire::Rest => 0.6,         // Fatigue reduces speed
-        Desire::Socialize => 1.0,    // Normal social movement
-        Desire::Wander => 0.8,       // Relaxed wandering pace
-    };
-
-    // Apply desire-based speed modification with smoothing
-    let target_speed = base_speed * speed_multiplier;
-    let current_speed = current_velocity.length();
-
-    // Smooth speed transition to avoid jerky movement
-    let speed_change_rate = 2.0; // Units per second
-    let new_speed = if current_speed < target_speed {
-        (current_speed + speed_change_rate * time_delta).min(target_speed)
-    } else {
-        (current_speed - speed_change_rate * time_delta).max(target_speed)
-    };
-
-    // Maintain direction but adjust speed
-    if current_velocity.length_squared() > 0.0 {
-        current_velocity.normalize() * new_speed
-    } else {
-        Vec2::new(new_speed, 0.0)
-    }
-}
-
-/// Utility function for calculating movement efficiency metrics
-/// ML-HOOK: Provides quantifiable performance metrics for behavior optimization
-fn calculate_movement_efficiency(velocity: Vec2, desired_speed: f32) -> f32 {
-    let current_speed = velocity.length();
-    if desired_speed > 0.0 {
-        (current_speed / desired_speed).clamp(0.0, 1.0)
-    } else {
-        0.0
-    }
-}
-
-/// System implementing desire-driven movement with boundary collision handling
-/// System based on Goal-Oriented Behavior and Classical Mechanics
-pub fn movement_system(
-    mut query: Query<(Entity, &mut Transform, &mut Velocity, &Desire), With<Npc>>,
+/// System for detecting and handling boundary collisions
+/// **Single Responsibility:** Only handles boundary physics and collision detection
+/// Based on Classical Physics - elastic collision model for boundary interactions
+pub fn boundary_collision_system(
+    mut query: Query<(Entity, &mut Transform, &mut Velocity), With<Npc>>,
     game_constants: Res<GameConstants>,
     windows: Query<&Window>,
-    time: Res<Time>,
     mut boundary_events: EventWriter<BoundaryCollisionEvent>,
-    mut movement_events: EventWriter<MovementBehaviorEvent>,
 ) {
     let Ok(window) = windows.single() else {
         return; // Exit early if no window found
     };
-    let bounds = calculate_bounds(window, game_constants.npc_radius);
-    let time_delta = time.delta_secs();
 
-    for (entity, mut transform, mut velocity, desire) in query.iter_mut() {
+    let bounds = Vec2::new(
+        window.width() / 2.0 - game_constants.npc_radius,
+        window.height() / 2.0 - game_constants.npc_radius,
+    );
+
+    for (entity, mut transform, mut velocity) in query.iter_mut() {
         let position = transform.translation.truncate();
-        let current_direction = get_direction(&velocity);
+        let current_direction = get_normalized_direction(velocity.linvel);
 
-        // ML-HOOK: Apply desire-influenced movement behavior
-        let desire_velocity = calculate_desire_influenced_velocity(
+        if let Some(collision_normal) = detect_boundary_collision(
+            position,
             velocity.linvel,
-            desire,
-            game_constants.npc_speed,
-            time_delta,
-        );
+            -bounds,
+            bounds,
+            game_constants.npc_radius,
+            0.1, // prediction time
+        ) {
+            // Reflect velocity using helper function
+            let old_direction = current_direction;
+            velocity.linvel = reflect_velocity_off_boundary(velocity.linvel, collision_normal);
 
-        // Check for boundary collisions and apply reflection if needed
-        if let Some(collision_normal) = check_boundaries(position, current_direction, bounds) {
-            let reflected_direction = reflect_direction(current_direction, collision_normal);
-            let new_velocity = reflected_direction * desire_velocity.length();
+            // Ensure NPC stays within boundaries
+            let clamped_position = position.clamp(
+                -bounds + Vec2::splat(game_constants.npc_radius),
+                bounds - Vec2::splat(game_constants.npc_radius),
+            );
+            transform.translation = clamped_position.extend(transform.translation.z);
 
             // ML-HOOK: Fire event for quantifiable boundary collision tracking
             boundary_events.write(BoundaryCollisionEvent {
                 entity,
                 position,
-                old_direction: current_direction,
-                new_direction: reflected_direction,
+                old_direction,
+                new_direction: velocity.linvel.normalize(),
                 collision_normal,
             });
-
-            velocity.linvel = new_velocity;
-        } else {
-            // Apply desire-influenced velocity when not colliding
-            velocity.linvel = desire_velocity;
         }
+    }
+}
 
-        // ML-HOOK: Calculate and track movement efficiency metrics
-        let efficiency = calculate_movement_efficiency(velocity.linvel, game_constants.npc_speed);
+/// System for applying basic physics movement
+/// **Single Responsibility:** Only handles position updates based on velocity
+/// Based on Classical Mechanics - basic kinematic movement
+pub fn physics_movement_system(
+    mut query: Query<(&mut Transform, &Velocity), With<Npc>>,
+    time: Res<Time>,
+) {
+    for (mut transform, velocity) in query.iter_mut() {
+        // Apply velocity-based movement
+        let movement = velocity.linvel * time.delta_secs();
+        transform.translation += movement.extend(0.0);
+    }
+}
+
+/// System for tracking movement behavior metrics for ML
+/// **Single Responsibility:** Only collects and reports movement analytics
+/// ML-HOOK: Provides quantifiable movement analytics for learning optimization
+pub fn movement_analytics_system(
+    query: Query<(Entity, &Velocity, &Desire), With<Npc>>,
+    mut movement_events: EventWriter<MovementBehaviorEvent>,
+    game_constants: Res<GameConstants>,
+) {
+    for (entity, velocity, desire) in query.iter() {
+        // Calculate movement efficiency metrics
+        let efficiency = calculate_movement_efficiency(
+            velocity.linvel.length(),
+            game_constants.npc_speed,
+            1.0, // normalized time for this frame
+        );
 
         movement_events.write(MovementBehaviorEvent {
             entity,
@@ -168,18 +118,13 @@ pub fn movement_system(
             velocity: velocity.linvel,
             movement_efficiency: efficiency,
         });
-
-        // Ensure direction is normalized for consistent behavior
-        if velocity.linvel.length_squared() > 0.0 {
-            let normalized_velocity = normalize_direction(velocity.linvel, Vec2::new(1.0, 0.0));
-            velocity.linvel = normalized_velocity * velocity.linvel.length();
-        }
     }
 }
 
-/// System for analyzing movement patterns and behavioral metrics
+/// System for analyzing movement patterns over time
+/// **Single Responsibility:** Only handles periodic movement pattern analysis
 /// ML-HOOK: Provides quantifiable movement analytics for learning optimization
-pub fn analyze_movement_patterns(
+pub fn movement_pattern_analysis_system(
     query: Query<(&Transform, &Velocity, &Desire), With<Npc>>,
     mut last_analysis_time: Local<f32>,
     time: Res<Time>,

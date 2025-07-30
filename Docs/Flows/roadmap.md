@@ -210,26 +210,26 @@ solid for future expansions.
 ### 1.2.1 Needs System Enhancement
 
 -   [x] **`Needs` Refactoring:** Complete restructuring of the needs component
-    -   [ ] Value normalization (0.0-100.0 for all needs)
-    -   [ ] Differentiated decay rates by need type
-    -   [ ] Threshold system for triggering behaviors
+    -   [x] Value normalization (0.0-100.0 for all needs)
+    -   [x] Differentiated decay rates by need type
+    -   [x] Threshold system for triggering behaviors
 
--   [ ] **Basic Resources System:** Initial implementation of `Resources` component
-    -   [ ] Data structures for different resource types
-    -   [ ] Ownership and resource transfer system
-    -   [ ] Integration with basic needs
+-   [x] **Basic Resources System:** Initial implementation of `Resources` component
+    -   [x] Data structures for different resource types
+    -   [x] Ownership and resource transfer system
+    -   [x] Integration with basic needs
 
 ### 1.2.2 Component Architecture Improvement
 
--   [ ] **Component Standardization:** Consistent application of standard derives
-    -   [ ] `#[derive(Component, Debug, Reflect, Default)]` on all components
-    -   [ ] Automatic registration in `CustomComponentsPlugin`
-    -   [ ] Inline documentation with scientific comments
+-   [x] **Component Standardization:** Consistent application of standard derives
+    -   [x] `#[derive(Component, Debug, Reflect, Default)]` on all components
+    -   [x] Automatic registration in `CustomComponentsPlugin`
+    -   [x] Inline documentation with scientific comments
 
--   [ ] **Initial Entity Builders:** Creation of first entity constructors
-    -   [ ] Basic `NPCBuilder` for standardized NPC creation
-    -   [ ] Controlled randomization of initial attributes
-    -   [ ] Validation of mandatory components
+-   [x] **Initial Entity Builders:** Creation of first entity constructors
+    -   [x] Basic `NPCBuilder` for standardized NPC creation
+    -   [x] Controlled randomization of initial attributes
+    -   [x] Validation of mandatory components
 
 ## Phase 1.3: Knowledge and Memory System (📋 Planned)
 
@@ -269,19 +269,19 @@ spreading.
 ### 1.4.1 Physics Integration
 
 -   [ ] **bevy_rapier2d Setup:** Complete physics system configuration
-    -   [ ] RapierPhysicsPlugin initialization
-    -   [ ] Gravity and world settings configuration
-    -   [ ] Debug rendering setup for development
+    -   [x] RapierPhysicsPlugin initialization
+    -   [x] Gravity and world settings configuration
+    -   [x] Debug rendering setup for development
 
 -   [ ] **Movement Components:** Creation of components for physical movement
-    -   [ ] Integration with Rapier's `RigidBody` and `Collider`
-    -   [ ] Controlled velocity and acceleration
+    -   [x] Integration with Rapier's `RigidBody` and `Collider`
+    -   [x] Controlled velocity and acceleration
     -   [ ] Movement limits based on NPC attributes
 
 ### 1.4.2 Collision and Interaction System
 
 -   [ ] **Collision Detection:** System for physical interactions between NPCs
-    -   [ ] Event-driven collision detection
+    -   [x] Event-driven collision detection
     -   [ ] Differentiation between collision types (social, physical, resource)
     -   [ ] Triggers to initiate social interactions
 
@@ -293,7 +293,7 @@ spreading.
 ### 1.4.3 Visual and Debug Systems
 
 -   [ ] **Basic Visual System:** Visual representation of NPCs and environment
-    -   [ ] Simple sprites for NPCs with state indicators
+    -   [x] Simple sprites for NPCs with state indicators
     -   [ ] Needs visualization via colors or icons
     -   [ ] Debug overlays for development
 

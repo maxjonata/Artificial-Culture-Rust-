@@ -3,10 +3,44 @@ mod systems;
 mod entity_builders;
 mod utils;
 
+use crate::components::components_constants::{ColorConstants, GameConstants, RumorTimer};
 use crate::components::components_default::CustomComponentsPlugin;
-use crate::components::components_resources::{ColorConstants, GameConstants, RumorTimer};
 use crate::components::*;
-use crate::entity_builders::{entity_builders_environment::spawn_environmental_resources, entity_builders_npc::spawn_test_npcs};
+use crate::entity_builders::entity_builders_default::{spawn_environmental_resources, spawn_test_npcs};
+use crate::systems::events::events_environment::{ResourceInteractionAttemptEvent, ResourceInteractionSuccessEvent, ResourceProximityEvent, ResourceRegenerationEvent};
+use crate::systems::events::events_needs::{DesireFulfillmentAttemptEvent, NeedChangeEvent, NeedSatisfactionEvent, ThresholdCrossedEvent};
+use crate::systems::systems_environment::{
+    resource_interaction_system,
+    resource_regeneration_system,
+};
+use crate::systems::systems_movement::{
+    boundary_collision_system,
+    desire_movement_system,
+    movement_analytics_system,
+    movement_pattern_analysis_system,
+    physics_movement_system,
+};
+use crate::systems::systems_needs::{
+    debug_npc_status,
+    decay_basic_needs,
+    desire_fulfillment_system,
+    desire_update_system,
+    handle_social_interactions,
+    threshold_monitoring_system,
+};
+use crate::systems::systems_pathfinding::{
+    desire_pathfinding_system,
+    resource_discovery_system,
+    steering_behavior_system,
+};
+// Import all the systems we need
+use crate::systems::systems_rumor::{
+    rumor_decay_system,
+    rumor_injection_system,
+    rumor_interaction_detection_system,
+    rumor_transmission_system,
+};
+use crate::systems::systems_visual::color_system;
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy_inspector_egui::{
@@ -20,30 +54,6 @@ use systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorE
 use systems::events::events_needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
 use systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
 use systems::events::events_rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
-
-use crate::systems::systems_environment::{
-    handle_hotel_interactions,
-    handle_restaurant_interactions,
-    handle_well_interactions,
-    regenerate_environmental_resources,
-};
-use crate::systems::systems_movement::{analyze_movement_patterns, movement_system};
-use crate::systems::systems_needs::{
-    decay_basic_needs,
-    fulfill_desires,
-    handle_social_interactions,
-    update_desires_from_needs,
-};
-use crate::systems::systems_pathfinding::{
-    analyze_pathfinding_behavior,
-    resource_discovery_system,
-    steering_navigation_system,
-    target_cleanup_system,
-    target_selection_system,
-};
-// Import all the systems we need
-use crate::systems::systems_rumor::{analyze_rumor_diffusion, handle_rumor_spread, inject_rumor_system};
-use crate::systems::systems_visual::color_system;
 
 fn setup_simulation(
     mut commands: Commands,
@@ -90,6 +100,10 @@ fn main() {
         .add_event::<NeedDecayEvent>()
         .add_event::<DesireChangeEvent>()
         .add_event::<SocialInteractionEvent>()
+        .add_event::<ThresholdCrossedEvent>()
+        .add_event::<DesireFulfillmentAttemptEvent>()
+        .add_event::<NeedSatisfactionEvent>()
+        .add_event::<NeedChangeEvent>()
         .add_event::<RumorInjectionEvent>()
         .add_event::<RumorSpreadEvent>()
         .add_event::<RumorSpreadAttemptEvent>()
@@ -97,56 +111,73 @@ fn main() {
         .add_event::<MovementBehaviorEvent>()
         .add_event::<ResourceInteractionEvent>()
         .add_event::<ResourceDepletionEvent>()
+        .add_event::<ResourceInteractionAttemptEvent>()
+        .add_event::<ResourceInteractionSuccessEvent>()
+        .add_event::<ResourceRegenerationEvent>()
+        .add_event::<ResourceProximityEvent>()
         .add_event::<PathTargetSetEvent>()
         .add_event::<PathTargetReachedEvent>()
         .add_event::<ResourceDiscoveredEvent>()
 
+
         // Startup systems
         .add_systems(Startup, setup_simulation)
 
-        // Update systems organized by priority and dependencies
+        // Update systems organized by event flow and dependencies for optimal performance
         .add_systems(Update, (
-            // Core need management (highest priority)
-            decay_basic_needs,
-            update_desires_from_needs,
-
-            // Movement system with desire-driven behavior
-            movement_system,
-
-            // Social and rumor systems
+            // PHASE 1: Core State Updates (Event Producers)
+            // These systems generate the primary events that drive other systems
             (
-                inject_rumor_system,
-                handle_rumor_spread,
-                handle_social_interactions,
-            ),
-
-            // Environmental resource interactions
-            (
-                handle_well_interactions,
-                handle_restaurant_interactions,
-                handle_hotel_interactions,
-                regenerate_environmental_resources,
-            ),
-
-            // Desire fulfillment and visual feedback
-            (
-                fulfill_desires,
-                color_system,
+                decay_basic_needs,              // Produces NeedChangeEvent, NeedDecayEvent
+                threshold_monitoring_system,    // Consumes NeedChangeEvent, produces ThresholdCrossedEvent
             ).chain(),
 
-            // Pathfinding systems
+            // PHASE 2: Decision Making (Event Consumers → Event Producers)
+            // These systems react to state changes and make behavioral decisions
             (
-                resource_discovery_system,
-                target_selection_system,
-                steering_navigation_system,
-                target_cleanup_system,
+                desire_update_system,           // Consumes ThresholdCrossedEvent, produces DesireChangeEvent
+                resource_discovery_system,      // Produces ResourceDiscoveredEvent, PathTargetSetEvent
             ),
 
-            // Analysis and debugging systems (lower priority)
+            // PHASE 3: Action Execution (Event Consumers)
+            // These systems execute the decisions made in Phase 2
             (
-                analyze_rumor_diffusion,
-                analyze_movement_patterns,
-                analyze_pathfinding_behavior,
+                // Movement systems - execute movement decisions
+                desire_pathfinding_system,      // Consumes DesireChangeEvent, PathTargetSetEvent
+                steering_behavior_system,       // Consumes pathfinding data
+                physics_movement_system,        // Executes actual movement
+                boundary_collision_system,      // Handles movement constraints
+                desire_movement_system,         // Applies desire-based movement modifiers
+            ).chain(),
+
+            // PHASE 4: Interaction Systems (Event Consumers → Event Producers)
+            // These systems handle entity interactions based on movement/proximity
+            (
+                // Social interactions - handle NPC-to-NPC interactions
+                rumor_interaction_detection_system,  // Detects proximity for rumors
+                rumor_transmission_system,           // Handles rumor spread events
+                handle_social_interactions,          // Processes social need fulfillment
+
+                // Resource interactions - handle NPC-to-resource interactions
+                resource_interaction_system,         // Processes resource interaction attempts
+                desire_fulfillment_system,           // Handles desire satisfaction from interactions
+            ),
+
+            // PHASE 5: World State Management (Event Consumers)
+            // These systems update world state based on interactions
+            (
+                resource_regeneration_system,   // Regenerates depleted resources
+                rumor_injection_system,         // Injects new rumors into the system
+                rumor_decay_system,             // Decays existing rumors over time
+            ),
+
+            // PHASE 6: Feedback and Analysis (Event Consumers, Low Priority)
+            // These systems provide visual feedback and analytics
+            (
+                color_system,                   // Visual feedback based on current state
+                movement_pattern_analysis_system, // Analytics for movement patterns
+                movement_analytics_system,      // General movement analytics
+                debug_npc_status,              // Debug information display
             ),
         ))
         .run();

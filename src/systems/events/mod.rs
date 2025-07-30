@@ -4,4 +4,3 @@ pub mod events_needs;
 pub mod events_pathfinding;
 pub mod events_rumor;
 pub mod events_visual;
-

@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 
-use crate::components::components_environment::{Hotel, InteractableResource, ResourceType, Restaurant, SafeZone, Well};
+use crate::components::components_constants::{ColorConstants, GameConstants, RumorTimer};
+use crate::components::components_environment::{Hotel, InteractableResource, Resource, ResourceOwnership, ResourceTransfer, ResourceType, Restaurant, SafeZone, Well};
 use crate::components::components_knowledge::KnowledgeBase;
 use crate::components::components_needs::{BasicNeeds, Desire, DesirePriorities, DesireThresholds};
 use crate::components::components_npc::{Npc, Personality};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
-use crate::components::components_resources::{ColorConstants, GameConstants, RumorTimer};
 
 /// Plugin for registering all custom components with Bevy's reflection system
 pub struct CustomComponentsPlugin;
@@ -22,13 +22,18 @@ impl Plugin for CustomComponentsPlugin {
             .register_type::<BasicNeeds>()
             .register_type::<Desire>()
             .register_type::<DesireThresholds>()
-            // Environment components
+            .register_type::<DesirePriorities>()
+            // Environment components - New unified resource system
+            .register_type::<Resource>()
+            .register_type::<ResourceType>()
+            .register_type::<ResourceOwnership>()
+            .register_type::<ResourceTransfer>()
+            .register_type::<InteractableResource>()
+            // Environment components - Legacy (for backward compatibility)
             .register_type::<Well>()
             .register_type::<Restaurant>()
             .register_type::<Hotel>()
             .register_type::<SafeZone>()
-            .register_type::<InteractableResource>()
-            .register_type::<ResourceType>()
             // Pathfinding components
             .register_type::<PathTarget>()
             .register_type::<SteeringBehavior>()
@@ -46,27 +51,15 @@ impl Plugin for CustomComponentsPlugin {
 // ============================================================================
 
 
-impl Default for BasicNeeds {
-    fn default() -> Self {
-        Self {
-            hunger: 80.0,
-            thirst: 80.0,
-            fatigue: 20.0,
-            safety: 90.0,
-            social: 60.0,
-        }
-    }
-}
-
 impl Default for DesireThresholds {
     fn default() -> Self {
         Self {
-            // Critical thresholds based on psychological research
-            hunger_threshold: 30.0,     // Below 30% triggers food seeking
-            thirst_threshold: 25.0,     // Below 25% triggers water seeking (more urgent)
-            fatigue_threshold: 75.0,    // Above 75% triggers rest seeking
-            safety_threshold: 40.0,     // Below 40% triggers safety seeking
-            social_threshold: 20.0,     // Below 20% triggers social interaction
+            // Critical thresholds based on psychological research - normalized 0.0-1.0
+            hunger_threshold: 0.3,   // Seek food when hunger drops below 30%
+            thirst_threshold: 0.25,  // Seek water when thirst drops below 25% (more urgent)
+            fatigue_threshold: 0.2,  // Rest when fatigue drops below 20%
+            safety_threshold: 0.4,   // Seek safety when below 40%
+            social_threshold: 0.3,   // Socialize when below 30%
             priority_weights: DesirePriorities::default(),
         }
     }
@@ -74,21 +67,13 @@ impl Default for DesireThresholds {
 
 impl Default for DesirePriorities {
     fn default() -> Self {
-        // Based on Maslow's hierarchy of needs
+        // Based on Maslow's hierarchy of needs - normalized 0.0-1.0
         Self {
-            thirst: 100.0,    // Most critical - dehydration is fastest killer
-            hunger: 90.0,     // Second most critical
-            safety: 80.0,     // Security comes before comfort
-            fatigue: 60.0,    // Important but not immediately life-threatening
-            social: 40.0,     // Important for mental health but lowest priority
-        }
-    }
-}
-
-impl Default for Personality {
-    fn default() -> Self {
-        Self {
-            openness: 0.5, // Neutral openness by default
+            thirst: 1.0,    // Maximum priority - dehydration is fastest killer
+            hunger: 0.85,   // Very high priority - survival need
+            safety: 0.75,   // High priority - security need
+            fatigue: 0.6,   // Medium priority - physiological need
+            social: 0.3,    // Lower priority - social need
         }
     }
 }
@@ -100,11 +85,12 @@ impl Default for GameConstants {
             npc_radius: 15.0,
             npc_speed: 200.0,
             social_distance: 100.0,
-            hunger_decay: 0.1,
-            thirst_decay: 0.1,
-            fatigue_regen: 0.1,
-            safety_decay: 0.1,
-            social_decay: 0.1,
+            // Differentiated decay rates based on physiological urgency
+            hunger_decay: 0.008,    // Moderate decay - can survive weeks without food
+            thirst_decay: 0.015,    // Faster decay - can only survive days without water
+            fatigue_regen: 0.005,   // Slower accumulation - fatigue builds gradually
+            safety_decay: 0.012,    // Moderate-fast decay - stress builds quickly in unsafe environments
+            social_decay: 0.003,    // Slowest decay - social isolation takes time to affect wellbeing
             num_wells: 1,
             num_restaurants: 1,
             num_hotels: 1,
@@ -122,51 +108,12 @@ impl Default for ColorConstants {
     }
 }
 
-impl Default for Well {
-    fn default() -> Self {
-        Self {
-            water_capacity: 100.0,
-            consumption_rate: 15.0,
-            regeneration_rate: 2.0,
-        }
-    }
-}
-
-impl Default for Restaurant {
-    fn default() -> Self {
-        Self {
-            food_capacity: 100.0,
-            consumption_rate: 20.0,
-            regeneration_rate: 1.5,
-        }
-    }
-}
-
-impl Default for Hotel {
-    fn default() -> Self {
-        Self {
-            rest_capacity: 100.0,
-            consumption_rate: 25.0,
-            regeneration_rate: 3.0,
-        }
-    }
-}
-
-impl Default for SafeZone {
-    fn default() -> Self {
-        Self {
-            safety_level: 95.0,
-            effect_radius: 80.0,
-        }
-    }
-}
-
 impl Default for InteractableResource {
     fn default() -> Self {
         Self {
             resource_type: ResourceType::Water,
-            availability: 100.0,
-            max_interactions: 5,
+            availability: 1.0,        // Normalized: 1.0 = full availability
+            max_interactions: 5,      // Data-oriented: u8 for memory efficiency
             current_interactions: 0,
             regeneration_timer: 0.0,
         }

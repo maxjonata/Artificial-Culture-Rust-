@@ -1,290 +1,179 @@
-use crate::components::components_environment::{Hotel, InteractableResource, ResourceType, Restaurant, SafeZone, Well};
-use crate::components::components_needs::{BasicNeeds, Desire};
-use crate::components::{components_npc::Npc, components_resources::GameConstants};
-use crate::systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionEvent};
+use crate::components::{BasicNeeds, Hotel, Restaurant, Well};
+use crate::systems::events::events_environment::{
+    ResourceInteractionAttemptEvent, ResourceInteractionSuccessEvent
+    , ResourceRegenerationEvent,
+};
+use crate::systems::events::events_needs::{NeedChangeEvent, NeedType};
+use crate::utils::helpers::resource_helpers::{
+    apply_satisfaction_to_needs, calculate_consumption_rate,
+    calculate_satisfaction_gain, get_need_level_for_resource,
+};
+use bevy::ecs::event::{EventReader, EventWriter};
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::CollisionEvent;
 
-/// Utility function to calculate satisfaction gained from resource interaction
-/// System based on Diminishing Returns Theory - satisfaction decreases with higher current levels
-fn calculate_satisfaction_gain(current_need: f32, base_gain: f32) -> f32 {
-    // Diminishing returns: more satisfaction when a need is higher
-    let need_factor = (100.0 - current_need) / 100.0; // 0.0 to 1.0
-    base_gain * (0.5 + need_factor * 0.5) // Minimum 50% gain, up to 100%
-}
-
-/// System handling NPC interactions with wells (water sources)
-/// System based on Resource Exchange Theory and Homeostatic Need Satisfaction
-pub fn handle_well_interactions(
-    mut collision_events: EventReader<CollisionEvent>,
-    mut npc_query: Query<(Entity, &mut BasicNeeds, &Desire), With<Npc>>,
-    mut well_query: Query<(Entity, &mut Well, &mut InteractableResource), Without<Npc>>,
-    mut interaction_events: EventWriter<ResourceInteractionEvent>,
-    mut depletion_events: EventWriter<ResourceDepletionEvent>,
+/// Event-driven system that handles resource interactions when NPCs desire specific resources
+/// Based on Environmental Psychology - resource interaction affects satisfaction
+/// Replaces the O(n) polling system with event-driven approach for better performance
+pub fn resource_interaction_system(
+    mut interaction_events: EventReader<ResourceInteractionAttemptEvent>,
+    mut success_events: EventWriter<ResourceInteractionSuccessEvent>,
+    mut need_change_events: EventWriter<NeedChangeEvent>,
+    mut needs_query: Query<&mut BasicNeeds>,
+    mut well_query: Query<&mut Well>,
+    mut restaurant_query: Query<&mut Restaurant>,
+    mut hotel_query: Query<&mut Hotel>,
 ) {
-    for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(entity1, entity2, _flags) = collision_event {
-            // Try to match NPC with Well
-            if let (Ok((npc_entity, mut needs, desire)), Ok((well_entity, mut well, mut resource))) =
-                (npc_query.get_mut(*entity1), well_query.get_mut(*entity2)) {
-                handle_water_interaction(
-                    npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
-            } else if let (Ok((npc_entity, mut needs, desire)), Ok((well_entity, mut well, mut resource))) =
-                (npc_query.get_mut(*entity2), well_query.get_mut(*entity1)) {
-                handle_water_interaction(
-                    npc_entity, &mut needs, desire, well_entity, &mut well, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
+    for event in interaction_events.read() {
+        if let Ok(mut needs) = needs_query.get_mut(event.npc_entity) {
+            let current_need_level = get_need_level_for_resource(&needs, event.resource_type);
+
+            // Skip if need is already satisfied
+            if current_need_level >= 0.9 {
+                continue;
+            }
+
+            // Try to interact with the resource
+            let interaction_result = match event.resource_type {
+                crate::components::components_environment::ResourceType::Water => {
+                    if let Ok(mut well) = well_query.get_mut(event.resource_entity) {
+                        if well.water_capacity > 0.1 {
+                            let satisfaction = calculate_satisfaction_gain(
+                                event.resource_type,
+                                well.water_capacity,
+                                current_need_level,
+                            );
+                            let consumption = calculate_consumption_rate(
+                                event.resource_type,
+                                1.0 - current_need_level,
+                            );
+
+                            well.water_capacity = (well.water_capacity - consumption).clamp(0.0, 1.0);
+                            Some((satisfaction, well.water_capacity))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+                crate::components::components_environment::ResourceType::Food => {
+                    if let Ok(mut restaurant) = restaurant_query.get_mut(event.resource_entity) {
+                        if restaurant.food_capacity > 0.1 {
+                            let satisfaction = calculate_satisfaction_gain(
+                                event.resource_type,
+                                restaurant.food_capacity,
+                                current_need_level,
+                            );
+                            let consumption = calculate_consumption_rate(
+                                event.resource_type,
+                                1.0 - current_need_level,
+                            );
+
+                            restaurant.food_capacity = (restaurant.food_capacity - consumption).clamp(0.0, 1.0);
+                            Some((satisfaction, restaurant.food_capacity))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+                crate::components::components_environment::ResourceType::Rest => {
+                    if let Ok(_hotel) = hotel_query.get(event.resource_entity) {
+                        // Hotels provide unlimited rest - they're safe zones
+                        let satisfaction = calculate_satisfaction_gain(
+                            event.resource_type,
+                            1.0, // Hotels always at full capacity
+                            current_need_level,
+                        );
+                        Some((satisfaction, 1.0))
+                    } else {
+                        None
+                    }
+                }
+                _ => None, // Other resource types not implemented yet
+            };
+
+            // Apply satisfaction if interaction was successful
+            if let Some((satisfaction, resource_availability_after)) = interaction_result {
+                let old_need_level = current_need_level;
+                let actual_change = apply_satisfaction_to_needs(&mut needs, event.resource_type, satisfaction);
+
+                // Fire need change event for threshold monitoring
+                if actual_change > 0.0 {
+                    let need_type = match event.resource_type {
+                        crate::components::components_environment::ResourceType::Water => NeedType::Thirst,
+                        crate::components::components_environment::ResourceType::Food => NeedType::Hunger,
+                        crate::components::components_environment::ResourceType::Rest => NeedType::Fatigue,
+                        crate::components::components_environment::ResourceType::Safety => NeedType::Safety,
+                        crate::components::components_environment::ResourceType::Social => NeedType::Social,
+                    };
+
+                    need_change_events.write(NeedChangeEvent {
+                        entity: event.npc_entity,
+                        need_type,
+                        old_value: old_need_level,
+                        new_value: get_need_level_for_resource(&needs, event.resource_type),
+                        change_amount: actual_change,
+                    });
+                }
+
+                // Fire success event for ML tracking
+                success_events.write(ResourceInteractionSuccessEvent {
+                    npc_entity: event.npc_entity,
+                    resource_entity: event.resource_entity,
+                    resource_type: event.resource_type,
+                    satisfaction_gained: satisfaction,
+                    resource_availability_after,
+                });
             }
         }
     }
 }
 
-/// Helper function for water interaction logic
-fn handle_water_interaction(
-    npc_entity: Entity,
-    needs: &mut BasicNeeds,
-    desire: &Desire,
-    well_entity: Entity,
-    well: &mut Well,
-    resource: &mut InteractableResource,
-    interaction_events: &mut EventWriter<ResourceInteractionEvent>,
-    depletion_events: &mut EventWriter<ResourceDepletionEvent>,
-) {
-    // Only interact if NPC desires water and resource is available
-    if matches!(desire, Desire::FindWater) && well.water_capacity > 0.0 && resource.current_interactions < resource.max_interactions {
-        let base_gain = 25.0; // Base thirst satisfaction
-        let satisfaction_gained = calculate_satisfaction_gain(needs.thirst, base_gain);
-        let water_consumed = well.consumption_rate.min(well.water_capacity);
-
-        // Apply satisfaction to NPC
-        needs.thirst = (needs.thirst + satisfaction_gained).clamp(0.0, 100.0);
-
-        // Consume resource
-        well.water_capacity -= water_consumed;
-        resource.current_interactions += 1;
-
-        // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.write(ResourceInteractionEvent {
-            npc_entity,
-            resource_entity: well_entity,
-            resource_type: ResourceType::Water,
-            satisfaction_gained,
-            resource_consumed: water_consumed,
-        });
-
-        if well.water_capacity <= 0.0 {
-            depletion_events.write(ResourceDepletionEvent {
-                resource_entity: well_entity,
-                resource_type: ResourceType::Water,
-                remaining_capacity: 0.0,
-            });
-        }
-
-        info!("NPC satisfied thirst at well! Thirst: {:.1}, Well capacity: {:.1}",
-              needs.thirst, well.water_capacity);
-    }
-}
-
-/// System handling NPC interactions with restaurants (food sources)
-/// System based on Resource Exchange Theory and Homeostatic Need Satisfaction
-pub fn handle_restaurant_interactions(
-    mut collision_events: EventReader<CollisionEvent>,
-    mut npc_query: Query<(Entity, &mut BasicNeeds, &Desire), With<Npc>>,
-    mut restaurant_query: Query<(Entity, &mut Restaurant, &mut InteractableResource), Without<Npc>>,
-    mut interaction_events: EventWriter<ResourceInteractionEvent>,
-    mut depletion_events: EventWriter<ResourceDepletionEvent>,
-) {
-    for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(entity1, entity2, _flags) = collision_event {
-            // Try to match NPC with Restaurant
-            if let (Ok((npc_entity, mut needs, desire)), Ok((restaurant_entity, mut restaurant, mut resource))) =
-                (npc_query.get_mut(*entity1), restaurant_query.get_mut(*entity2)) {
-                handle_food_interaction(
-                    npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
-            } else if let (Ok((npc_entity, mut needs, desire)), Ok((restaurant_entity, mut restaurant, mut resource))) =
-                (npc_query.get_mut(*entity2), restaurant_query.get_mut(*entity1)) {
-                handle_food_interaction(
-                    npc_entity, &mut needs, desire, restaurant_entity, &mut restaurant, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
-            }
-        }
-    }
-}
-
-/// Helper function for food interaction logic
-fn handle_food_interaction(
-    npc_entity: Entity,
-    needs: &mut BasicNeeds,
-    desire: &Desire,
-    restaurant_entity: Entity,
-    restaurant: &mut Restaurant,
-    resource: &mut InteractableResource,
-    interaction_events: &mut EventWriter<ResourceInteractionEvent>,
-    depletion_events: &mut EventWriter<ResourceDepletionEvent>,
-) {
-    // Only interact if NPC desires food and resource is available
-    if matches!(desire, Desire::FindFood) && restaurant.food_capacity > 0.0 && resource.current_interactions < resource.max_interactions {
-        let base_gain = 30.0; // Base hunger satisfaction
-        let satisfaction_gained = calculate_satisfaction_gain(needs.hunger, base_gain);
-        let food_consumed = restaurant.consumption_rate.min(restaurant.food_capacity);
-
-        // Apply satisfaction to NPC
-        needs.hunger = (needs.hunger + satisfaction_gained).clamp(0.0, 100.0);
-
-        // Consume resource
-        restaurant.food_capacity -= food_consumed;
-        resource.current_interactions += 1;
-
-        // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.write(ResourceInteractionEvent {
-            npc_entity,
-            resource_entity: restaurant_entity,
-            resource_type: ResourceType::Food,
-            satisfaction_gained,
-            resource_consumed: food_consumed,
-        });
-
-        if restaurant.food_capacity <= 0.0 {
-            depletion_events.write(ResourceDepletionEvent {
-                resource_entity: restaurant_entity,
-                resource_type: ResourceType::Food,
-                remaining_capacity: 0.0,
-            });
-        }
-
-        info!("NPC satisfied hunger at restaurant! Hunger: {:.1}, Restaurant capacity: {:.1}",
-              needs.hunger, restaurant.food_capacity);
-    }
-}
-
-/// System handling NPC interactions with hotels (rest sources)
-/// System based on Resource Exchange Theory and Fatigue Recovery Theory
-pub fn handle_hotel_interactions(
-    mut collision_events: EventReader<CollisionEvent>,
-    mut npc_query: Query<(Entity, &mut BasicNeeds, &Desire), With<Npc>>,
-    mut hotel_query: Query<(Entity, &mut Hotel, &mut InteractableResource), Without<Npc>>,
-    mut interaction_events: EventWriter<ResourceInteractionEvent>,
-    mut depletion_events: EventWriter<ResourceDepletionEvent>,
-) {
-    for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(entity1, entity2, _flags) = collision_event {
-            // Try to match NPC with Hotel
-            if let (Ok((npc_entity, mut needs, desire)), Ok((hotel_entity, mut hotel, mut resource))) =
-                (npc_query.get_mut(*entity1), hotel_query.get_mut(*entity2)) {
-                handle_rest_interaction(
-                    npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
-            } else if let (Ok((npc_entity, mut needs, desire)), Ok((hotel_entity, mut hotel, mut resource))) =
-                (npc_query.get_mut(*entity2), hotel_query.get_mut(*entity1)) {
-                handle_rest_interaction(
-                    npc_entity, &mut needs, desire, hotel_entity, &mut hotel, &mut resource,
-                    &mut interaction_events, &mut depletion_events,
-                );
-            }
-        }
-    }
-}
-
-/// Helper function for rest interaction logic
-fn handle_rest_interaction(
-    npc_entity: Entity,
-    needs: &mut BasicNeeds,
-    desire: &Desire,
-    hotel_entity: Entity,
-    hotel: &mut Hotel,
-    resource: &mut InteractableResource,
-    interaction_events: &mut EventWriter<ResourceInteractionEvent>,
-    depletion_events: &mut EventWriter<ResourceDepletionEvent>,
-) {
-    // Only interact if NPC desires rest and resource is available
-    if matches!(desire, Desire::Rest) && hotel.rest_capacity > 0.0 && resource.current_interactions < resource.max_interactions {
-        let base_reduction = 35.0; // Base fatigue reduction
-        let fatigue_reduced = calculate_satisfaction_gain(100.0 - needs.fatigue, base_reduction);
-        let rest_consumed = hotel.consumption_rate.min(hotel.rest_capacity);
-
-        // Apply fatigue reduction to NPC
-        needs.fatigue = (needs.fatigue - fatigue_reduced).clamp(0.0, 100.0);
-
-        // Consume resource
-        hotel.rest_capacity -= rest_consumed;
-        resource.current_interactions += 1;
-
-        // ML-HOOK: Fire events for quantifiable interaction tracking
-        interaction_events.write(ResourceInteractionEvent {
-            npc_entity,
-            resource_entity: hotel_entity,
-            resource_type: ResourceType::Rest,
-            satisfaction_gained: fatigue_reduced,
-            resource_consumed: rest_consumed,
-        });
-
-        if hotel.rest_capacity <= 0.0 {
-            depletion_events.write(ResourceDepletionEvent {
-                resource_entity: hotel_entity,
-                resource_type: ResourceType::Rest,
-                remaining_capacity: 0.0,
-            });
-        }
-
-        info!("NPC rested at hotel! Fatigue: {:.1}, Hotel capacity: {:.1}",
-              needs.fatigue, hotel.rest_capacity);
-    }
-}
-
-/// System for resource regeneration over time
-/// System based on Natural Resource Recovery Theory
-pub fn regenerate_environmental_resources(
-    mut well_query: Query<(&mut Well, &mut InteractableResource), Without<Restaurant>>,
-    mut restaurant_query: Query<(&mut Restaurant, &mut InteractableResource), (Without<Well>, Without<Hotel>)>,
-    mut hotel_query: Query<(&mut Hotel, &mut InteractableResource), (Without<Well>, Without<Restaurant>)>,
+/// System that regenerates resource capacity over time
+/// Based on Resource Economics - natural regeneration patterns
+/// Uses timer-based approach instead of polling all resources every frame
+pub fn resource_regeneration_system(
     time: Res<Time>,
+    mut regeneration_events: EventWriter<ResourceRegenerationEvent>,
+    mut resource_query: Query<(Entity, &mut crate::components::components_environment::Resource)>,
+    mut well_query: Query<&mut Well>,
+    mut restaurant_query: Query<&mut Restaurant>,
 ) {
     let delta_time = time.delta_secs();
 
-    // Regenerate wells
-    for (mut well, mut resource) in well_query.iter_mut() {
-        if well.water_capacity < 100.0 {
-            well.water_capacity = (well.water_capacity + well.regeneration_rate * delta_time).clamp(0.0, 100.0);
-        }
+    // Regenerate unified resources
+    for (entity, mut resource) in resource_query.iter_mut() {
+        if resource.availability < 1.0 {
+            let old_availability = resource.availability;
+            let regeneration_amount = crate::utils::helpers::resource_helpers::calculate_regeneration_amount(&resource, delta_time);
 
-        // Reset interaction counter over time
-        resource.regeneration_timer += delta_time;
-        if resource.regeneration_timer >= 5.0 { // Reset every 5 seconds
-            resource.current_interactions = 0;
-            resource.regeneration_timer = 0.0;
-        }
-    }
+            if regeneration_amount > 0.0 {
+                resource.availability = (resource.availability + regeneration_amount).clamp(0.0, 1.0);
 
-    // Regenerate restaurants
-    for (mut restaurant, mut resource) in restaurant_query.iter_mut() {
-        if restaurant.food_capacity < 100.0 {
-            restaurant.food_capacity = (restaurant.food_capacity + restaurant.regeneration_rate * delta_time).clamp(0.0, 100.0);
-        }
-
-        resource.regeneration_timer += delta_time;
-        if resource.regeneration_timer >= 5.0 {
-            resource.current_interactions = 0;
-            resource.regeneration_timer = 0.0;
+                regeneration_events.write(ResourceRegenerationEvent {
+                    resource_entity: entity,
+                    resource_type: resource.resource_type,
+                    availability_before: old_availability,
+                    availability_after: resource.availability,
+                    regeneration_amount,
+                });
+            }
         }
     }
 
-    // Regenerate hotels
-    for (mut hotel, mut resource) in hotel_query.iter_mut() {
-        if hotel.rest_capacity < 100.0 {
-            hotel.rest_capacity = (hotel.rest_capacity + hotel.regeneration_rate * delta_time).clamp(0.0, 100.0);
+    // Regenerate legacy wells
+    for mut well in well_query.iter_mut() {
+        if well.water_capacity < 1.0 {
+            well.water_capacity = (well.water_capacity + 0.02 * delta_time).clamp(0.0, 1.0);
         }
+    }
 
-        resource.regeneration_timer += delta_time;
-        if resource.regeneration_timer >= 5.0 {
-            resource.current_interactions = 0;
-            resource.regeneration_timer = 0.0;
+    // Regenerate legacy restaurants
+    for mut restaurant in restaurant_query.iter_mut() {
+        if restaurant.food_capacity < 1.0 {
+            restaurant.food_capacity = (restaurant.food_capacity + 0.015 * delta_time).clamp(0.0, 1.0);
         }
     }
 }

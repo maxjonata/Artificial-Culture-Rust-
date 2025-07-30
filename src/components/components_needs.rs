@@ -1,18 +1,20 @@
 use bevy::prelude::*;
 
 /// Component representing an NPC's basic needs
-#[derive(Component, Reflect, PartialEq, Debug)]
+/// All values are normalized between 0.0-1.0 for ML compatibility
+/// Based on Homeostatic Drive Theory - organisms maintain internal balance
+#[derive(Component, Debug, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
 pub struct BasicNeeds {
-    /// Hunger level
+    /// Hunger level (0.0 = starving, 1.0 = fully satisfied)
     pub hunger: f32,
-    /// Thirst level
+    /// Thirst level (0.0 = dehydrated, 1.0 = fully hydrated)
     pub thirst: f32,
-    /// Fatigue level
+    /// Fatigue level (0.0 = exhausted, 1.0 = fully rested)
     pub fatigue: f32,
-    /// Safety level
+    /// Safety level (0.0 = very unsafe, 1.0 = completely safe)
     pub safety: f32,
-    /// Social need level
+    /// Social need level (0.0 = isolated, 1.0 = socially fulfilled)
     pub social: f32,
 }
 
