@@ -71,6 +71,36 @@ pub struct NeedSatisfactionEvent {
     pub resource_entity: Option<Entity>, // The resource that provided satisfaction
 }
 
+/// Event that triggers decision-making evaluation for an agent
+/// This is the missing event from roadmap 1.3.2 that should trigger the decision_making_system
+#[derive(Event)]
+pub struct EvaluateDecision {
+    pub entity: Entity,
+    pub trigger_reason: DecisionTrigger,
+}
+
+/// Reasons why decision evaluation was triggered
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecisionTrigger {
+    /// Periodic re-evaluation (every few seconds)
+    Periodic,
+    /// Need value changed significantly
+    NeedChanged,
+    /// External stimulus (collision, interaction)
+    Stimulus,
+    /// Forced re-evaluation (e.g., from ML agent)
+    Forced,
+}
+
+/// Event fired when an agent's current desire is set after decision evaluation
+#[derive(Event)]
+pub struct CurrentDesireSet {
+    pub entity: Entity,
+    pub desire: Desire,
+    pub utility_score: f32,
+    pub competing_desires: Vec<(Desire, f32)>, // ML-HOOK: All evaluated desires for observation space
+}
+
 /// Types of needs that can change
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NeedType {

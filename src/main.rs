@@ -5,10 +5,9 @@ mod utils;
 
 use crate::components::components_constants::{ColorConstants, GameConstants, RumorTimer};
 use crate::components::components_default::CustomComponentsPlugin;
-use crate::components::*;
 use crate::entity_builders::entity_builders_default::{spawn_environmental_resources, spawn_test_npcs};
-use crate::systems::events::events_environment::{ResourceInteractionAttemptEvent, ResourceInteractionSuccessEvent, ResourceProximityEvent, ResourceRegenerationEvent};
-use crate::systems::events::events_needs::{DesireFulfillmentAttemptEvent, NeedChangeEvent, NeedSatisfactionEvent, ThresholdCrossedEvent};
+use crate::systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionAttemptEvent, ResourceInteractionEvent, ResourceInteractionSuccessEvent, ResourceProximityEvent, ResourceRegenerationEvent};
+use crate::systems::events::events_needs::{CurrentDesireSet, DesireChangeEvent, DesireFulfillmentAttemptEvent, EvaluateDecision, NeedChangeEvent, NeedDecayEvent, NeedSatisfactionEvent, SocialInteractionEvent, ThresholdCrossedEvent};
 use crate::systems::systems_environment::{
     refill_management_system,
     resource_interaction_system,
@@ -23,9 +22,12 @@ use crate::systems::systems_movement::{
 use crate::systems::systems_needs::{
     debug_npc_status,
     decay_basic_needs,
+    decision_making_system,
     desire_fulfillment_system,
     desire_update_system,
     handle_social_interactions,
+    optimized_threshold_monitoring_system,
+    periodic_decision_trigger_system,
     threshold_monitoring_system,
 };
 use crate::systems::systems_pathfinding::{
@@ -48,10 +50,7 @@ use bevy_inspector_egui::{
     quick::WorldInspectorPlugin,
 };
 use bevy_rapier2d::prelude::*;
-use systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionEvent};
 use systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
-// Import all the ML-ready events for future integration
-use systems::events::events_needs::{DesireChangeEvent, NeedDecayEvent, SocialInteractionEvent};
 use systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
 use systems::events::events_rumor::{RumorInjectionEvent, RumorSpreadAttemptEvent, RumorSpreadEvent};
 
@@ -104,6 +103,9 @@ fn main() {
         .add_event::<DesireFulfillmentAttemptEvent>()
         .add_event::<NeedSatisfactionEvent>()
         .add_event::<NeedChangeEvent>()
+        // NEW: Decision-making events from roadmap 1.3.2
+        .add_event::<EvaluateDecision>()
+        .add_event::<CurrentDesireSet>()
         .add_event::<RumorInjectionEvent>()
         .add_event::<RumorSpreadEvent>()
         .add_event::<RumorSpreadAttemptEvent>()
@@ -125,17 +127,23 @@ fn main() {
 
         // Update systems organized by event flow and dependencies for optimal performance
         .add_systems(Update, (
+            // PHASE 0: Decision Triggers (Event Producers)
+            // NEW: Periodic decision evaluation system from roadmap 1.3.2
+            periodic_decision_trigger_system,   // Fires EvaluateDecision events periodically
+
             // PHASE 1: Core State Updates (Event Producers)
             // These systems generate the primary events that drive other systems
             (
-                decay_basic_needs,              // Produces NeedChangeEvent, NeedDecayEvent
-                threshold_monitoring_system,    // Consumes NeedChangeEvent, produces ThresholdCrossedEvent
+                decay_basic_needs,                      // Produces NeedChangeEvent, NeedDecayEvent
+                optimized_threshold_monitoring_system,  // NEW: Optimized version that triggers decision evaluation
             ).chain(),
 
             // PHASE 2: Decision Making (Event Consumers → Event Producers)
-            // These systems react to state changes and make behavioral decisions
+            // NEW: Core decision-making system from roadmap 1.3.2
             (
-                desire_update_system,           // Consumes ThresholdCrossedEvent, produces DesireChangeEvent
+                decision_making_system,         // NEW: Uses evaluate_most_urgent_desire for holistic decisions
+                threshold_monitoring_system,    // Legacy: Still used for logging/debugging threshold crossings
+                desire_update_system,           // Legacy: Individual desire updates (less optimal)
                 resource_discovery_system,      // Produces ResourceDiscoveredEvent, PathTargetSetEvent
             ),
 

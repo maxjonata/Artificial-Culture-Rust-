@@ -74,3 +74,17 @@ pub struct DesirePriorities {
     pub rest: f32,      // Medium priority - physiological need
     pub social: f32,    // Lower priority - social need
 }
+
+/// Component that stores an agent's current decision/desire after evaluation
+/// This is the missing component from roadmap 1.3.2 that gets set by the decision_making_system
+#[derive(Component, Debug, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
+pub struct CurrentDesire {
+    /// The agent's current active desire/goal
+    pub desire: Desire,
+    /// The utility score of this desire when it was selected
+    /// ML-HOOK: Quantifiable decision strength for observation space
+    pub utility_score: f32,
+    /// Timestamp when this desire was last evaluated
+    pub last_evaluated: f32,
+}

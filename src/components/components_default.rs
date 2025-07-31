@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::components::components_constants::{ColorConstants, GameConstants, RumorTimer};
 use crate::components::components_environment::{Hotel, InteractableResource, Resource, ResourceOwnership, ResourceTransfer, ResourceType, Restaurant, SafeZone, Well};
 use crate::components::components_knowledge::KnowledgeBase;
-use crate::components::components_needs::{BasicNeeds, Desire, DesirePriorities, DesireThresholds, DualThreshold};
+use crate::components::components_needs::{BasicNeeds, CurrentDesire, Desire, DesirePriorities, DesireThresholds, DualThreshold};
 use crate::components::components_npc::{Npc, Personality, RefillState};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
 
@@ -25,6 +25,7 @@ impl Plugin for CustomComponentsPlugin {
             .register_type::<DesireThresholds>()
             .register_type::<DesirePriorities>()
             .register_type::<DualThreshold>()
+            .register_type::<CurrentDesire>()
             // Environment components - New unified resource system
             .register_type::<Resource>()
             .register_type::<ResourceType>()

@@ -217,12 +217,12 @@ Ignorance".
         `is_carrying_item`).
     -   [ ] The system populates an agent's `PerceivedEntities: Vec<(Entity, ApparentState)>` component. **Crucially, it
         must not grant access to internal components of other entities.**
--   [ ] **1.3.2 Decision-Making - Utility Calculation:**
-    -   [ ] Create a `decision_making_system` triggered by an `EvaluateDecision` event.
-    -   [ ] Implement a `NeedsConfig` component to store priorities and thresholds for each need.
-    -   [ ] The system calculates a utility score for each potential action using the formula:
+-   [x] **1.3.2 Decision-Making - Utility Calculation:**
+    -   [x] Create a `decision_making_system` triggered by an `EvaluateDecision` event.
+    -   [x] Implement a `NeedsConfig` component to store priorities and thresholds for each need.
+    -   [x] The system calculates a utility score for each potential action using the formula:
         `Score = (CurrentNeedValue / HighThreshold) * Priority`.
-    -   [ ] It selects the desire with the highest score and adds a `CurrentDesire` component to the agent.
+    -   [x] It selects the desire with the highest score and adds a `CurrentDesire` component to the agent.
 -   [ ] **1.3.3 Action Management - Execution & Interruption:**
     -   [ ] Create systems that act upon `CurrentDesire` components (e.g., `movement_action_system`).
     -   [ ] Create an `action_continuation_system` that runs on agents with an active action. It checks if the relevant

@@ -1,9 +1,9 @@
-use crate::components::components_needs::{BasicNeeds, Desire, DesireThresholds};
+use crate::components::components_needs::{BasicNeeds, CurrentDesire, Desire, DesireThresholds};
 use crate::components::{components_constants::GameConstants, components_npc::Npc};
 use crate::systems::events::events_needs::{
-    DesireChangeEvent, DesireChangeReason, DesireFulfillmentAttemptEvent, NeedChangeEvent,
-    NeedDecayEvent, NeedSatisfactionEvent, NeedType, SocialInteractionEvent,
-    ThresholdCrossedEvent, ThresholdDirection,
+    CurrentDesireSet, DecisionTrigger, DesireChangeEvent, DesireChangeReason,
+    DesireFulfillmentAttemptEvent, EvaluateDecision, NeedChangeEvent, NeedDecayEvent,
+    NeedSatisfactionEvent, NeedType, SocialInteractionEvent, ThresholdCrossedEvent, ThresholdDirection,
 };
 use crate::utils::helpers::needs_helpers::{
     calculate_desire_utility, decay_needs, evaluate_most_urgent_desire, get_satisfaction_level,
@@ -417,6 +417,151 @@ pub fn debug_npc_status(
                 "NPC Status - Desire: {:?}, Hunger: {:.2}, Thirst: {:.2}, Rest: {:.2}, Safety: {:.2}, Social: {:.2}",
                 desire, needs.hunger, needs.thirst, needs.rest, needs.safety, needs.social
             );
+        }
+    }
+}
+
+/// The missing decision_making_system from roadmap 1.3.2
+/// Event-driven system that evaluates all competing desires and selects the highest utility one
+/// Triggered by EvaluateDecision events for better performance than polling
+/// Uses the existing evaluate_most_urgent_desire helper function for proper decision-making
+pub fn decision_making_system(
+    mut evaluation_events: EventReader<EvaluateDecision>,
+    mut current_desire_events: EventWriter<CurrentDesireSet>,
+    mut desire_change_events: EventWriter<DesireChangeEvent>,
+    needs_query: Query<&BasicNeeds>,
+    thresholds_query: Query<&DesireThresholds>,
+    mut current_desires_query: Query<&mut CurrentDesire>,
+    time: Res<Time>,
+) {
+    for event in evaluation_events.read() {
+        // Direct entity access - no iteration needed since we have the entity from the event
+        if let (Ok(needs), Ok(thresholds), Ok(mut current_desire)) = (
+            needs_query.get(event.entity),
+            thresholds_query.get(event.entity),
+            current_desires_query.get_mut(event.entity)
+        ) {
+            // Use the existing helper function that evaluates ALL competing desires
+            let (best_desire, utility_score) = evaluate_most_urgent_desire(&needs, &thresholds);
+
+            // ML-HOOK: Calculate utility for all desires for observation space
+            let competing_desires = vec![
+                (Desire::FindSafety, calculate_desire_utility(Desire::FindSafety, &needs, &thresholds)),
+                (Desire::FindWater, calculate_desire_utility(Desire::FindWater, &needs, &thresholds)),
+                (Desire::FindFood, calculate_desire_utility(Desire::FindFood, &needs, &thresholds)),
+                (Desire::Rest, calculate_desire_utility(Desire::Rest, &needs, &thresholds)),
+                (Desire::Socialize, calculate_desire_utility(Desire::Socialize, &needs, &thresholds)),
+            ];
+
+            // Only update if the desire actually changed
+            if current_desire.desire != best_desire {
+                let old_desire = current_desire.desire;
+
+                // Update the CurrentDesire component
+                current_desire.desire = best_desire;
+                current_desire.utility_score = utility_score;
+                current_desire.last_evaluated = time.elapsed_secs();
+
+                // Fire events for system communication and ML tracking
+                current_desire_events.write(CurrentDesireSet {
+                    entity: event.entity,
+                    desire: best_desire,
+                    utility_score,
+                    competing_desires: competing_desires.clone(),
+                });
+
+                desire_change_events.write(DesireChangeEvent {
+                    entity: event.entity,
+                    old_desire,
+                    new_desire: best_desire,
+                    urgency_score: utility_score,
+                    trigger_reason: match event.trigger_reason {
+                        DecisionTrigger::NeedChanged => DesireChangeReason::ThresholdCrossed,
+                        _ => DesireChangeReason::ManualOverride,
+                    },
+                });
+
+                info!("Decision made for NPC: {:?} -> {:?} (utility: {:.2})",
+                      old_desire, best_desire, utility_score);
+            }
+        }
+    }
+}
+
+/// System that triggers periodic decision re-evaluation
+/// Replaces the need to poll all NPCs every frame by firing EvaluateDecision events
+/// Based on bounded rationality theory - agents don't constantly re-evaluate
+pub fn periodic_decision_trigger_system(
+    query: Query<Entity, With<CurrentDesire>>,
+    mut evaluation_events: EventWriter<EvaluateDecision>,
+    mut last_evaluation: Local<f32>,
+    time: Res<Time>,
+) {
+    const EVALUATION_INTERVAL: f32 = 2.0; // Re-evaluate every 2 seconds
+
+    *last_evaluation += time.delta_secs();
+    if *last_evaluation >= EVALUATION_INTERVAL {
+        *last_evaluation = 0.0;
+
+        // Trigger evaluation for all agents
+        for entity in query.iter() {
+            evaluation_events.write(EvaluateDecision {
+                entity,
+                trigger_reason: DecisionTrigger::Periodic,
+            });
+        }
+    }
+}
+
+/// Optimized threshold monitoring system that triggers decision evaluation
+/// Instead of directly setting desires, it triggers the decision_making_system
+/// This allows for proper utility comparison between all competing desires
+pub fn optimized_threshold_monitoring_system(
+    mut need_change_events: EventReader<NeedChangeEvent>,
+    mut threshold_events: EventWriter<ThresholdCrossedEvent>,
+    mut evaluation_events: EventWriter<EvaluateDecision>,
+    thresholds_query: Query<&DesireThresholds>,
+) {
+    for event in need_change_events.read() {
+        // Direct entity access - no iteration needed since we have the entity from the event
+        if let Ok(thresholds) = thresholds_query.get(event.entity) {
+            let dual_threshold = match event.need_type {
+                NeedType::Hunger => &thresholds.hunger_threshold,
+                NeedType::Thirst => &thresholds.thirst_threshold,
+                NeedType::Rest => &thresholds.rest_threshold,
+                NeedType::Safety => &thresholds.safety_threshold,
+                NeedType::Social => &thresholds.social_threshold,
+            };
+
+            // Check if significant threshold crossings occurred
+            let old_below_high = event.old_value < dual_threshold.high_threshold;
+            let new_below_high = event.new_value < dual_threshold.high_threshold;
+            let old_below_low = event.old_value < dual_threshold.low_threshold;
+            let new_below_low = event.new_value < dual_threshold.low_threshold;
+
+            let significant_change = old_below_high != new_below_high || old_below_low != new_below_low;
+
+            if significant_change {
+                // Fire threshold crossed event for logging/debugging
+                threshold_events.write(ThresholdCrossedEvent {
+                    entity: event.entity,
+                    need_type: event.need_type,
+                    threshold_value: dual_threshold.high_threshold,
+                    current_value: event.new_value,
+                    crossed_direction: if new_below_high {
+                        ThresholdDirection::Below
+                    } else {
+                        ThresholdDirection::Above
+                    },
+                    should_trigger_desire: new_below_high,
+                });
+
+                // Trigger decision evaluation instead of directly setting desires
+                evaluation_events.write(EvaluateDecision {
+                    entity: event.entity,
+                    trigger_reason: DecisionTrigger::NeedChanged,
+                });
+            }
         }
     }
 }
