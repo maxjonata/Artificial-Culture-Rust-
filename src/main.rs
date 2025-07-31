@@ -10,12 +10,12 @@ use crate::entity_builders::entity_builders_default::{spawn_environmental_resour
 use crate::systems::events::events_environment::{ResourceInteractionAttemptEvent, ResourceInteractionSuccessEvent, ResourceProximityEvent, ResourceRegenerationEvent};
 use crate::systems::events::events_needs::{DesireFulfillmentAttemptEvent, NeedChangeEvent, NeedSatisfactionEvent, ThresholdCrossedEvent};
 use crate::systems::systems_environment::{
+    refill_management_system,
     resource_interaction_system,
     resource_regeneration_system,
 };
 use crate::systems::systems_movement::{
     boundary_collision_system,
-    desire_movement_system,
     movement_analytics_system,
     movement_pattern_analysis_system,
     physics_movement_system,
@@ -144,15 +144,17 @@ fn main() {
             (
                 // Movement systems - execute movement decisions
                 desire_pathfinding_system,      // Consumes DesireChangeEvent, PathTargetSetEvent
-                steering_behavior_system,       // Consumes pathfinding data
+                steering_behavior_system,       // Consumes pathfinding data, applies weighted utility
                 physics_movement_system,        // Executes actual movement
                 boundary_collision_system,      // Handles movement constraints
-                desire_movement_system,         // Applies desire-based movement modifiers
             ).chain(),
 
             // PHASE 4: Interaction Systems (Event Consumers → Event Producers)
             // These systems handle entity interactions based on movement/proximity
             (
+                // Refill management - handles NPC refilling state
+                refill_management_system,            // Manages refilling state transitions
+
                 // Social interactions - handle NPC-to-NPC interactions
                 rumor_interaction_detection_system,  // Detects proximity for rumors
                 rumor_transmission_system,           // Handles rumor spread events

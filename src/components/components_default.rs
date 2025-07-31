@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::components::components_constants::{ColorConstants, GameConstants, RumorTimer};
 use crate::components::components_environment::{Hotel, InteractableResource, Resource, ResourceOwnership, ResourceTransfer, ResourceType, Restaurant, SafeZone, Well};
 use crate::components::components_knowledge::KnowledgeBase;
-use crate::components::components_needs::{BasicNeeds, Desire, DesirePriorities, DesireThresholds};
-use crate::components::components_npc::{Npc, Personality};
+use crate::components::components_needs::{BasicNeeds, Desire, DesirePriorities, DesireThresholds, DualThreshold};
+use crate::components::components_npc::{Npc, Personality, RefillState};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
 
 /// Plugin for registering all custom components with Bevy's reflection system
@@ -16,6 +16,7 @@ impl Plugin for CustomComponentsPlugin {
             // NPC components
             .register_type::<Npc>()
             .register_type::<Personality>()
+            .register_type::<RefillState>()
             // Knowledge components
             .register_type::<KnowledgeBase>()
             // Needs components
@@ -23,6 +24,7 @@ impl Plugin for CustomComponentsPlugin {
             .register_type::<Desire>()
             .register_type::<DesireThresholds>()
             .register_type::<DesirePriorities>()
+            .register_type::<DualThreshold>()
             // Environment components - New unified resource system
             .register_type::<Resource>()
             .register_type::<ResourceType>()
@@ -54,12 +56,29 @@ impl Plugin for CustomComponentsPlugin {
 impl Default for DesireThresholds {
     fn default() -> Self {
         Self {
-            // Critical thresholds based on psychological research - normalized 0.0-1.0
-            hunger_threshold: 0.3,   // Seek food when hunger drops below 30%
-            thirst_threshold: 0.25,  // Seek water when thirst drops below 25% (more urgent)
-            fatigue_threshold: 0.2,  // Rest when fatigue drops below 20%
-            safety_threshold: 0.4,   // Seek safety when below 40%
-            social_threshold: 0.3,   // Socialize when below 30%
+            // Critical thresholds based on psychological research - using DualThreshold for hysteresis
+            // FIXED: All thresholds now use "higher satisfaction = better" semantics
+            // Desires activate when satisfaction drops BELOW high_threshold
+            hunger_threshold: DualThreshold {
+                high_threshold: 0.7,   // Activate FindFood when hunger satisfaction drops below 70%
+                low_threshold: 0.3,    // Start pathfinding when hunger satisfaction drops below 30%
+            },
+            thirst_threshold: DualThreshold {
+                high_threshold: 0.75,  // More urgent - activate when thirst satisfaction drops below 75%
+                low_threshold: 0.25,   // Start pathfinding when thirst satisfaction drops below 25%
+            },
+            rest_threshold: DualThreshold {
+                high_threshold: 0.6,   // Rest when rest level drops below 60%
+                low_threshold: 0.2,    // Start pathfinding when rest level drops below 20%
+            },
+            safety_threshold: DualThreshold {
+                high_threshold: 0.7,   // Seek safety when safety satisfaction drops below 70%
+                low_threshold: 0.4,    // Start pathfinding when safety satisfaction drops below 40%
+            },
+            social_threshold: DualThreshold {
+                high_threshold: 0.6,   // Socialize when social satisfaction drops below 60%
+                low_threshold: 0.3,    // Start pathfinding when social satisfaction drops below 30%
+            },
             priority_weights: DesirePriorities::default(),
         }
     }
@@ -69,11 +88,20 @@ impl Default for DesirePriorities {
     fn default() -> Self {
         // Based on Maslow's hierarchy of needs - normalized 0.0-1.0
         Self {
-            thirst: 1.0,    // Maximum priority - dehydration is fastest killer
-            hunger: 0.85,   // Very high priority - survival need
-            safety: 0.75,   // High priority - security need
-            fatigue: 0.6,   // Medium priority - physiological need
-            social: 0.3,    // Lower priority - social need
+            thirst: 1.0,       // Maximum priority - dehydration is fastest killer
+            hunger: 0.85,      // Very high priority - survival need
+            safety: 0.75,      // High priority - security need
+            rest: 0.6,         // Medium priority - physiological need
+            social: 0.3,       // Lower priority - social need
+        }
+    }
+}
+
+impl Default for DualThreshold {
+    fn default() -> Self {
+        Self {
+            high_threshold: 0.7,  // Activate desire when need reaches 70%
+            low_threshold: 0.3,   // Deactivate desire when need drops to 30%
         }
     }
 }
@@ -90,7 +118,7 @@ impl Default for GameConstants {
             thirst_decay: 0.015,    // Faster decay - can only survive days without water
             fatigue_regen: 0.005,   // Slower accumulation - fatigue builds gradually
             safety_decay: 0.012,    // Moderate-fast decay - stress builds quickly in unsafe environments
-            social_decay: 0.003,    // Slowest decay - social isolation takes time to affect wellbeing
+            loneliness_decay: 0.003,    // Slowest decay - social isolation takes time to affect wellbeing
             num_wells: 1,
             num_restaurants: 1,
             num_hotels: 1,

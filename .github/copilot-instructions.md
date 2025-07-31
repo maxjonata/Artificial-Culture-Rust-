@@ -316,3 +316,36 @@ at `src/entity_builders/generic_type_safe_builder.rs`.**
           .build(); // This is guaranteed by the compiler to be valid.
   }
   ```
+
+## 11. High-Level Runtime Architecture Overview
+
+**This section clarifies the separation of concerns between different parts of the live infrastructure.**
+
+The final application will not be a single executable but a distributed system composed of three distinct layers. Code
+should be written with this separation in mind.
+
+1. **The SDB Core (The Central Nervous System):**
+    - **Location:** Runs on the Space and Time DB cloud.
+    - **Code:** Consists of table definitions and **Reducers**.
+    - **Responsibility:** Manages persistent state, player authentication, and validates high-level, discrete actions (
+      e.g., `PlayerTradeItem`, `NpcCompleteQuest`). It is the ultimate source of truth. **It does NOT run continuous
+      simulations like physics or AI perception.**
+
+2. **The Bevy Simulation Worker (The Local Brain / Reflexes):**
+    - **Location:** Runs as a **native, headless Bevy application** on a separate server (or multiple servers for
+      different zones).
+    - **Code:** This is where the majority of our Bevy systems reside (`PhysicsSystem`, `AISystems`,
+      `InteractionSystem`).
+    - **Responsibility:** Executes the **high-frequency, continuous simulation** for a specific zone of the world. It
+      operates on data loaded into local RAM for maximum performance. It uses the `bevy_spacetimedb` crate to
+      communicate with the SDB Core.
+
+3. **The Player Client (The Sensory Interface):**
+    - **Location:** Runs on the player's machine.
+    - **Code:** A Bevy (or other engine) application focused on rendering, sound, and input.
+    - **Responsibility:** Handles input prediction and state interpolation to provide a smooth experience. It receives
+      its state from the SDB Core, not directly from a Bevy Worker.
+
+**Rule:** When writing a system, always consider: "Does this logic belong in a fast, local simulation (Bevy Worker) or
+as a secure, global state change (SDB Reducer)?" The default for complex, continuous processes is **always** the Bevy
+Worker.

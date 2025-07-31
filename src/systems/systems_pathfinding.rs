@@ -5,13 +5,14 @@ use bevy_rapier2d::prelude::*;
 use crate::components::components_constants::GameConstants;
 use crate::components::components_environment::{Hotel, ResourceType, Restaurant, SafeZone, Well};
 use crate::components::components_needs::Desire;
-use crate::components::components_npc::Npc;
+use crate::components::components_npc::{Npc, RefillState};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
 use crate::systems::events::events_pathfinding::{PathTargetReachedEvent, PathTargetSetEvent, ResourceDiscoveredEvent};
 use crate::utils::helpers::{
-    calculate_seek_force, calculate_wander_force, find_nearest_resource_position,
-    has_reached_target, should_timeout_pursuit,
+    calculate_seek_force, calculate_wander_force, find_nearest_npc_position,
+    find_nearest_resource_position, has_reached_target, should_timeout_pursuit,
 };
+
 
 /// System for discovering resources within range and updating NPCs' memory
 /// Based on Spatial Cognition Theory - agents use spatial memory for resource location
@@ -100,6 +101,7 @@ pub fn resource_discovery_system(
 /// Based on Goal-Oriented Action Planning - agents plan paths to satisfy needs
 pub fn desire_pathfinding_system(
     mut npc_query: Query<(Entity, &Transform, &Desire, &ResourceMemory, &mut PathTarget), With<Npc>>,
+    other_npcs_query: Query<(Entity, &Transform), (With<Npc>, Without<PathTarget>)>,
     mut target_events: EventWriter<PathTargetSetEvent>,
     time: Res<Time>,
 ) {
@@ -119,7 +121,11 @@ pub fn desire_pathfinding_system(
             Desire::FindFood => find_nearest_resource_position(npc_position, &memory.known_restaurants),
             Desire::Rest => find_nearest_resource_position(npc_position, &memory.known_hotels),
             Desire::FindSafety => find_nearest_resource_position(npc_position, &memory.known_safe_zones),
-            _ => None, // Wander or Socialize don't have specific targets
+            Desire::Socialize => {
+                // Find nearest other NPC for social interaction
+                find_nearest_npc_position(entity, npc_position, &other_npcs_query)
+            }
+            _ => None, // Wander doesn't have specific targets
         };
 
         if let Some(target_pos) = target_position {
@@ -130,12 +136,13 @@ pub fn desire_pathfinding_system(
             target_events.write(PathTargetSetEvent {
                 npc_entity: entity,
                 target_position: target_pos,
-                target_entity: None, // No specific entity for now
+                target_entity: None, // TODO: Store actual target entity for social interactions
                 target_type: match *desire {
                     Desire::FindWater => crate::components::components_environment::ResourceType::Water,
                     Desire::FindFood => crate::components::components_environment::ResourceType::Food,
                     Desire::Rest => crate::components::components_environment::ResourceType::Rest,
                     Desire::FindSafety => crate::components::components_environment::ResourceType::Safety,
+                    Desire::Socialize => crate::components::components_environment::ResourceType::Water, // TODO: Add Social resource type
                     _ => crate::components::components_environment::ResourceType::Water, // Default
                 },
                 distance_to_target: npc_position.distance(target_pos),
@@ -146,19 +153,26 @@ pub fn desire_pathfinding_system(
 
 /// System implementing steering behaviors for autonomous NPC movement
 /// Based on Craig Reynolds' Boids algorithm and steering behaviors
+/// Now respects RefillState to stop movement during resource interactions
 pub fn steering_behavior_system(
-    mut npc_query: Query<(Entity, &Transform, &mut Velocity, &mut SteeringBehavior, &PathTarget, &Desire), With<Npc>>,
+    mut npc_query: Query<(Entity, &Transform, &mut Velocity, &mut SteeringBehavior, &PathTarget, &Desire, &RefillState), With<Npc>>,
     game_constants: Res<GameConstants>,
     mut reached_events: EventWriter<PathTargetReachedEvent>,
     time: Res<Time>,
 ) {
     let current_time = time.elapsed_secs();
 
-    for (entity, transform, mut velocity, mut steering, path_target, desire) in npc_query.iter_mut() {
+    for (entity, transform, mut velocity, mut steering, path_target, desire, refill_state) in npc_query.iter_mut() {
         let current_position = transform.translation.truncate();
         let current_velocity = velocity.linvel;
 
-        // Check if target has been reached using helper
+        // Stop movement if NPC is refilling
+        if refill_state.is_refilling {
+            velocity.linvel = Vec2::ZERO;
+            steering.steering_force = Vec2::ZERO;
+            continue;
+        }
+
         if has_reached_target(current_position, path_target) {
             reached_events.write(PathTargetReachedEvent {
                 npc_entity: entity,

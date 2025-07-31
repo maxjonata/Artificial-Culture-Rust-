@@ -3,31 +3,13 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::Velocity;
 
-use crate::components::{components_constants::GameConstants, components_needs::Desire, components_npc::Npc};
+use crate::components::{components_constants::GameConstants, components_npc::Npc, Desire};
 use crate::systems::events::events_movement::{BoundaryCollisionEvent, MovementBehaviorEvent};
 use crate::utils::helpers::{
-    calculate_boundary_reflection, calculate_desire_movement_modifier, calculate_movement_efficiency,
+    calculate_boundary_reflection, calculate_movement_efficiency,
     detect_boundary_collision, get_normalized_direction, reflect_velocity_off_boundary,
     safe_normalize,
 };
-
-/// System for applying desire-influenced movement to NPCs
-/// **Single Responsibility:** Only handles desire-based velocity modification
-/// Based on Behavioral Psychology - desires influence movement patterns and speed
-pub fn desire_movement_system(
-    mut query: Query<(&mut Velocity, &Desire), With<Npc>>,
-    game_constants: Res<GameConstants>,
-) {
-    for (mut velocity, desire) in query.iter_mut() {
-        let (speed_modifier, _wander_modifier) = calculate_desire_movement_modifier(desire);
-        let adjusted_speed = game_constants.npc_speed * speed_modifier;
-
-        // Apply speed adjustment based on current desire
-        if velocity.linvel.length() > adjusted_speed {
-            velocity.linvel = velocity.linvel.normalize() * adjusted_speed;
-        }
-    }
-}
 
 /// System for detecting and handling boundary collisions
 /// **Single Responsibility:** Only handles boundary physics and collision detection

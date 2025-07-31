@@ -40,7 +40,7 @@ pub struct NeedDecayEvent {
     pub entity: Entity,
     pub hunger_change: f32,
     pub thirst_change: f32,
-    pub fatigue_change: f32,
+    pub rest_change: f32,
     pub safety_change: f32,
     pub social_change: f32,
 }
@@ -76,7 +76,7 @@ pub struct NeedSatisfactionEvent {
 pub enum NeedType {
     Hunger,
     Thirst,
-    Fatigue,
+    Rest,
     Safety,
     Social,
 }

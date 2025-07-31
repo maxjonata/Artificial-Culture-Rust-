@@ -5,7 +5,10 @@ use crate::systems::events::events_needs::{
     NeedDecayEvent, NeedSatisfactionEvent, NeedType, SocialInteractionEvent,
     ThresholdCrossedEvent, ThresholdDirection,
 };
-use crate::utils::helpers::{apply_needs_decay, evaluate_most_urgent_desire, get_satisfaction_level, increase_social_need};
+use crate::utils::helpers::needs_helpers::{
+    calculate_desire_utility, decay_needs, evaluate_most_urgent_desire, get_satisfaction_level,
+    increase_social_satisfaction, should_activate_desire, should_deactivate_desire,
+};
 use bevy::ecs::event::{EventReader, EventWriter};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::CollisionEvent;
@@ -13,6 +16,7 @@ use bevy_rapier2d::prelude::CollisionEvent;
 /// System implementing homeostatic need decay over time
 /// System based on Homeostatic Drive Theory - maintains internal physiological balance
 /// Now fires NeedChangeEvent for event-driven threshold monitoring
+/// FIXED: All needs now use "higher = better satisfied" semantics
 pub fn decay_basic_needs(
     mut query: Query<(Entity, &mut BasicNeeds), With<Npc>>,
     game_constants: Res<GameConstants>,
@@ -25,8 +29,8 @@ pub fn decay_basic_needs(
     for (entity, mut needs) in query.iter_mut() {
         let old_needs = *needs; // Capture old values for event firing
 
-        let (hunger_change, thirst_change, fatigue_change, safety_change, social_change) =
-            apply_needs_decay(&mut needs, &game_constants, delta_time);
+        let (hunger_change, thirst_change, rest_change, safety_change, social_change) =
+            decay_needs(&mut needs, &game_constants, delta_time);
 
         // Fire individual need change events for threshold monitoring
         if hunger_change != 0.0 {
@@ -49,13 +53,13 @@ pub fn decay_basic_needs(
             });
         }
 
-        if fatigue_change != 0.0 {
+        if rest_change != 0.0 {
             need_change_events.write(NeedChangeEvent {
                 entity,
-                need_type: NeedType::Fatigue,
-                old_value: old_needs.fatigue,
-                new_value: needs.fatigue,
-                change_amount: fatigue_change,
+                need_type: NeedType::Rest,
+                old_value: old_needs.rest,
+                new_value: needs.rest,
+                change_amount: rest_change,
             });
         }
 
@@ -84,7 +88,7 @@ pub fn decay_basic_needs(
             entity,
             hunger_change,
             thirst_change,
-            fatigue_change,
+            rest_change: rest_change,
             safety_change,
             social_change,
         });
@@ -94,6 +98,7 @@ pub fn decay_basic_needs(
 /// Event-driven system that handles social interactions based on Social Exchange Theory
 /// System based on Social Exchange Theory - positive interactions increase social satisfaction
 /// Only triggers when collision events occur, not on every frame
+/// FIXED: Now uses correct social field and function name
 pub fn handle_social_interactions(
     mut collision_events: EventReader<CollisionEvent>,
     mut social_events: EventWriter<SocialInteractionEvent>,
@@ -110,8 +115,8 @@ pub fn handle_social_interactions(
                 let old_social_2 = needs2.social;
 
                 // Both NPCs gain social satisfaction from the interaction using helper
-                let boost1 = increase_social_need(&mut needs1, SOCIAL_INTERACTION_BOOST);
-                let boost2 = increase_social_need(&mut needs2, SOCIAL_INTERACTION_BOOST);
+                let boost1 = increase_social_satisfaction(&mut needs1, SOCIAL_INTERACTION_BOOST);
+                let boost2 = increase_social_satisfaction(&mut needs2, SOCIAL_INTERACTION_BOOST);
 
                 // Fire individual need change events for threshold monitoring
                 if boost1 > 0.0 {
@@ -202,23 +207,23 @@ pub fn desire_fulfillment_system(
                     (NeedType::Thirst, actual_boost, true)
                 }
                 Desire::Rest => {
-                    let old_fatigue = needs.fatigue;
+                    let old_rest = needs.rest;
                     let recovery = 0.3;
-                    needs.fatigue = (needs.fatigue - recovery).clamp(0.0, 1.0);
-                    let actual_recovery = old_fatigue - needs.fatigue;
+                    needs.rest = (needs.rest + recovery).clamp(0.0, 1.0);
+                    let actual_recovery = needs.rest - old_rest;
 
                     if actual_recovery > 0.0 {
                         need_change_events.write(NeedChangeEvent {
                             entity: event.entity,
-                            need_type: NeedType::Fatigue,
-                            old_value: old_fatigue,
-                            new_value: needs.fatigue,
-                            change_amount: -actual_recovery, // Negative because fatigue decreased
+                            need_type: NeedType::Rest,
+                            old_value: old_rest,
+                            new_value: needs.rest,
+                            change_amount: actual_recovery,
                         });
                     }
 
-                    info!("NPC is resting! Fatigue decreased to {:.2}", needs.fatigue);
-                    (NeedType::Fatigue, actual_recovery, true)
+                    info!("NPC is resting! Rest level increased to {:.2}", needs.rest);
+                    (NeedType::Rest, actual_recovery, true)
                 }
                 Desire::FindSafety => {
                     let old_safety = needs.safety;
@@ -264,7 +269,8 @@ pub fn desire_fulfillment_system(
 
 /// Event-driven system that fires threshold crossing events when needs change
 /// This replaces the polling-based threshold checking for better performance
-/// Optimized to avoid entity iteration by using direct entity access
+/// Now uses DualThreshold structure with high/low thresholds for hysteresis
+/// FIXED: Updated to use new field names and correct threshold logic
 pub fn threshold_monitoring_system(
     mut need_change_events: EventReader<NeedChangeEvent>,
     mut threshold_events: EventWriter<ThresholdCrossedEvent>,
@@ -273,39 +279,56 @@ pub fn threshold_monitoring_system(
     for event in need_change_events.read() {
         // Direct entity access - no iteration needed since we have the entity from the event
         if let Ok(thresholds) = thresholds_query.get(event.entity) {
-            let threshold_value = match event.need_type {
-                NeedType::Hunger => thresholds.hunger_threshold,
-                NeedType::Thirst => thresholds.thirst_threshold,
-                NeedType::Fatigue => thresholds.fatigue_threshold,
-                NeedType::Safety => thresholds.safety_threshold,
-                NeedType::Social => thresholds.social_threshold,
+            let dual_threshold = match event.need_type {
+                NeedType::Hunger => &thresholds.hunger_threshold,
+                NeedType::Thirst => &thresholds.thirst_threshold,
+                NeedType::Rest => &thresholds.rest_threshold,
+                NeedType::Safety => &thresholds.safety_threshold,
+                NeedType::Social => &thresholds.social_threshold,
             };
 
-            // Check if we crossed the threshold
-            let old_below = event.old_value < threshold_value;
-            let new_below = event.new_value < threshold_value;
+            // NEW LOGIC: For "higher = better" semantics
+            // - Activate desires when satisfaction drops BELOW high_threshold
+            // - Start pathfinding when satisfaction drops BELOW low_threshold
+            // - Deactivate when satisfaction rises ABOVE high_threshold
+            let old_below_high = event.old_value < dual_threshold.high_threshold;
+            let new_below_high = event.new_value < dual_threshold.high_threshold;
+            let old_below_low = event.old_value < dual_threshold.low_threshold;
+            let new_below_low = event.new_value < dual_threshold.low_threshold;
 
-            // For fatigue, we check if we're above threshold (fatigue accumulates)
-            let (old_triggered, new_triggered) = if event.need_type == NeedType::Fatigue {
-                (event.old_value > threshold_value, event.new_value > threshold_value)
-            } else {
-                (old_below, new_below)
-            };
-
-            if old_triggered != new_triggered {
-                let direction = if new_triggered {
-                    ThresholdDirection::Below
-                } else {
-                    ThresholdDirection::Above
-                };
-
+            // Fire events when crossing BELOW high threshold (desire activation)
+            if !old_below_high && new_below_high {
                 threshold_events.write(ThresholdCrossedEvent {
                     entity: event.entity,
                     need_type: event.need_type,
-                    threshold_value,
+                    threshold_value: dual_threshold.high_threshold,
                     current_value: event.new_value,
-                    crossed_direction: direction,
-                    should_trigger_desire: new_triggered,
+                    crossed_direction: ThresholdDirection::Below,
+                    should_trigger_desire: true,
+                });
+            }
+
+            // Fire events when crossing ABOVE high threshold (desire deactivation)
+            if old_below_high && !new_below_high {
+                threshold_events.write(ThresholdCrossedEvent {
+                    entity: event.entity,
+                    need_type: event.need_type,
+                    threshold_value: dual_threshold.high_threshold,
+                    current_value: event.new_value,
+                    crossed_direction: ThresholdDirection::Above,
+                    should_trigger_desire: false,
+                });
+            }
+
+            // Fire events when crossing BELOW low threshold (urgent pathfinding)
+            if !old_below_low && new_below_low {
+                threshold_events.write(ThresholdCrossedEvent {
+                    entity: event.entity,
+                    need_type: event.need_type,
+                    threshold_value: dual_threshold.low_threshold,
+                    current_value: event.new_value,
+                    crossed_direction: ThresholdDirection::Below,
+                    should_trigger_desire: true, // Even more urgent
                 });
             }
         }
@@ -314,7 +337,8 @@ pub fn threshold_monitoring_system(
 
 /// Event-driven system that updates desires based on threshold crossing events
 /// Much more performant than polling all NPCs every frame
-/// Optimized to avoid entity iteration by using direct entity access
+/// Now uses weighted utility formula and dual threshold logic
+/// FIXED: Updated to use correct field names for new need types
 pub fn desire_update_system(
     mut threshold_events: EventReader<ThresholdCrossedEvent>,
     mut desire_events: EventWriter<DesireChangeEvent>,
@@ -330,23 +354,17 @@ pub fn desire_update_system(
             desires_query.get_mut(event.entity)
         ) {
             if event.should_trigger_desire {
-                // Determine new desire based on need type and urgency
+                // Determine new desire based on need type
                 let new_desire = match event.need_type {
                     NeedType::Hunger => Desire::FindFood,
                     NeedType::Thirst => Desire::FindWater,
-                    NeedType::Fatigue => Desire::Rest,
+                    NeedType::Rest => Desire::Rest,
                     NeedType::Safety => Desire::FindSafety,
                     NeedType::Social => Desire::Socialize,
                 };
 
-                // Calculate urgency score for ML tracking
-                let urgency = match event.need_type {
-                    NeedType::Hunger => (thresholds.hunger_threshold - needs.hunger) * thresholds.priority_weights.hunger,
-                    NeedType::Thirst => (thresholds.thirst_threshold - needs.thirst) * thresholds.priority_weights.thirst,
-                    NeedType::Fatigue => (needs.fatigue - thresholds.fatigue_threshold) * thresholds.priority_weights.fatigue,
-                    NeedType::Safety => (thresholds.safety_threshold - needs.safety) * thresholds.priority_weights.safety,
-                    NeedType::Social => (thresholds.social_threshold - needs.social) * thresholds.priority_weights.social,
-                };
+                // Calculate weighted utility score using the new formula
+                let utility = calculate_desire_utility(new_desire, &needs, &thresholds);
 
                 if *current_desire != new_desire {
                     info!("NPC desire changed from {:?} to {:?} due to {:?} threshold crossing",
@@ -356,23 +374,17 @@ pub fn desire_update_system(
                         entity: event.entity,
                         old_desire: *current_desire,
                         new_desire,
-                        urgency_score: urgency,
+                        urgency_score: utility,
                         trigger_reason: DesireChangeReason::ThresholdCrossed,
                     });
 
                     *current_desire = new_desire;
                 }
             } else {
-                // Threshold crossed upward - check if we should stop seeking
-                let should_stop_seeking = match event.need_type {
-                    NeedType::Hunger => *current_desire == Desire::FindFood && needs.hunger > 0.7,
-                    NeedType::Thirst => *current_desire == Desire::FindWater && needs.thirst > 0.75,
-                    NeedType::Fatigue => *current_desire == Desire::Rest && needs.fatigue < 0.4,
-                    NeedType::Safety => *current_desire == Desire::FindSafety && needs.safety > 0.8,
-                    NeedType::Social => *current_desire == Desire::Socialize && needs.social > 0.5,
-                };
+                // Use the new helper functions to check if we should deactivate the current desire
+                let should_deactivate = should_deactivate_desire(*current_desire, &needs, &thresholds);
 
-                if should_stop_seeking {
+                if should_deactivate {
                     desire_events.write(DesireChangeEvent {
                         entity: event.entity,
                         old_desire: *current_desire,
@@ -390,6 +402,7 @@ pub fn desire_update_system(
 
 /// System that logs current status of NPCs for debugging
 /// Can be disabled in production builds
+/// FIXED: Updated to use correct field names
 pub fn debug_npc_status(
     query: Query<(&BasicNeeds, &Desire), With<Npc>>,
     mut last_debug_time: Local<f32>,
@@ -401,8 +414,8 @@ pub fn debug_npc_status(
         *last_debug_time = 0.0;
         for (needs, desire) in query.iter() {
             debug!(
-                "NPC Status - Desire: {:?}, Hunger: {:.2}, Thirst: {:.2}, Fatigue: {:.2}, Safety: {:.2}, Social: {:.2}",
-                desire, needs.hunger, needs.thirst, needs.fatigue, needs.safety, needs.social
+                "NPC Status - Desire: {:?}, Hunger: {:.2}, Thirst: {:.2}, Rest: {:.2}, Safety: {:.2}, Social: {:.2}",
+                desire, needs.hunger, needs.thirst, needs.rest, needs.safety, needs.social
             );
         }
     }

@@ -14,7 +14,7 @@ pub fn calculate_satisfaction_gain(
         ResourceType::Food => 0.4,    // High satisfaction for survival need
         ResourceType::Rest => 0.3,    // Moderate satisfaction for recovery
         ResourceType::Safety => 0.35, // Moderate satisfaction for security
-        ResourceType::Social => 0.2,  // Lower but sustained satisfaction
+        ResourceType::Loneliness => 0.2,  // Lower but sustained satisfaction
     };
 
     // Diminishing returns: satisfaction decreases as need is already fulfilled
@@ -37,7 +37,7 @@ pub fn calculate_consumption_rate(
         ResourceType::Food => 0.08,   // Moderate consumption
         ResourceType::Rest => 0.0,    // Rest doesn't deplete (hotels are safe zones)
         ResourceType::Safety => 0.0,  // Safety doesn't deplete
-        ResourceType::Social => 0.05, // Light consumption of social resources
+        ResourceType::Loneliness => 0.05, // Light consumption of loneliness resources
     };
 
     // Higher urgency leads to higher consumption (desperate behavior)
@@ -61,31 +61,31 @@ pub fn calculate_regeneration_amount(
         ResourceType::Food => 0.015,  // Slower regeneration (food preparation)
         ResourceType::Rest => 0.0,    // Hotels don't regenerate capacity
         ResourceType::Safety => 0.0,  // Safety zones don't regenerate
-        ResourceType::Social => 0.03, // Social spaces recover quickly
+        ResourceType::Loneliness => 0.03, // Social spaces recover quickly
     };
 
     let max_regeneration = 1.0 - resource.availability;
     (regeneration_rate * delta_time).min(max_regeneration)
 }
 
-/// Helper function to check if resource can satisfy specific need type
-/// Based on Need-Resource Matching Theory
-pub fn can_resource_satisfy_need(
-    resource_type: ResourceType,
-    need_type: crate::systems::events::events_needs::NeedType,
-) -> bool {
+/// Helper function to check if a resource type matches a need type
+/// Used for determining if an NPC can satisfy their current need with a specific resource
+pub fn resource_matches_need(resource_type: ResourceType, need_type: crate::systems::events::events_needs::NeedType) -> bool {
+    use crate::systems::events::events_needs::NeedType;
+
     match (resource_type, need_type) {
-        (ResourceType::Water, crate::systems::events::events_needs::NeedType::Thirst) => true,
-        (ResourceType::Food, crate::systems::events::events_needs::NeedType::Hunger) => true,
-        (ResourceType::Rest, crate::systems::events::events_needs::NeedType::Fatigue) => true,
-        (ResourceType::Safety, crate::systems::events::events_needs::NeedType::Safety) => true,
-        (ResourceType::Social, crate::systems::events::events_needs::NeedType::Social) => true,
+        (ResourceType::Water, NeedType::Thirst) => true,
+        (ResourceType::Food, NeedType::Hunger) => true,
+        (ResourceType::Rest, crate::systems::events::events_needs::NeedType::Rest) => true,
+        (ResourceType::Safety, NeedType::Safety) => true,
+        (ResourceType::Loneliness, crate::systems::events::events_needs::NeedType::Social) => true,
         _ => false,
     }
 }
 
 /// Helper function to get need level from BasicNeeds based on resource type
 /// Based on Component Data Access Optimization
+/// FIXED: Updated to use new field names and correct semantics
 pub fn get_need_level_for_resource(
     needs: &BasicNeeds,
     resource_type: ResourceType,
@@ -93,14 +93,15 @@ pub fn get_need_level_for_resource(
     match resource_type {
         ResourceType::Water => needs.thirst,
         ResourceType::Food => needs.hunger,
-        ResourceType::Rest => 1.0 - needs.fatigue, // Fatigue is inverted (higher = more tired)
+        ResourceType::Rest => needs.rest,
         ResourceType::Safety => needs.safety,
-        ResourceType::Social => needs.social,
+        ResourceType::Loneliness => needs.social,
     }
 }
 
 /// Helper function to apply satisfaction to needs
 /// Based on Homeostatic Regulation Theory
+/// FIXED: Updated to use new field names and correct semantics
 pub fn apply_satisfaction_to_needs(
     needs: &mut BasicNeeds,
     resource_type: ResourceType,
@@ -118,16 +119,16 @@ pub fn apply_satisfaction_to_needs(
             needs.hunger - old_value
         }
         ResourceType::Rest => {
-            // For fatigue, satisfaction reduces fatigue (fatigue goes down)
-            let old_fatigue = needs.fatigue;
-            needs.fatigue = (needs.fatigue - satisfaction_amount).clamp(0.0, 1.0);
-            old_fatigue - needs.fatigue // Return positive change for recovery
+            // Rest satisfaction increases rest level directly
+            needs.rest = (needs.rest + satisfaction_amount).clamp(0.0, 1.0);
+            needs.rest - old_value
         }
         ResourceType::Safety => {
             needs.safety = (needs.safety + satisfaction_amount).clamp(0.0, 1.0);
             needs.safety - old_value
         }
-        ResourceType::Social => {
+        ResourceType::Loneliness => {
+            // Social satisfaction increases social satisfaction level directly
             needs.social = (needs.social + satisfaction_amount).clamp(0.0, 1.0);
             needs.social - old_value
         }

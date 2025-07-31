@@ -1,3 +1,4 @@
+use crate::components::components_npc::Npc;
 use crate::components::components_pathfinding::{PathTarget, SteeringBehavior};
 use bevy::prelude::*;
 
@@ -80,4 +81,24 @@ pub fn should_timeout_pursuit(target: &PathTarget, current_time: f32) -> bool {
     }
 
     (current_time - target.target_set_time) > target.max_pursuit_time
+}
+
+/// Helper function to find the nearest NPC position for social interaction
+/// Based on Social Psychology - agents seek proximity to others for social needs
+pub fn find_nearest_npc_position(
+    self_entity: Entity,
+    current_position: Vec2,
+    other_npcs_query: &Query<(Entity, &Transform), (With<Npc>, Without<PathTarget>)>,
+) -> Option<Vec2> {
+    other_npcs_query
+        .iter()
+        .filter(|(entity, _)| *entity != self_entity) // Don't target self
+        .min_by(|(_, transform_a), (_, transform_b)| {
+            let pos_a = transform_a.translation.truncate();
+            let pos_b = transform_b.translation.truncate();
+            let dist_a = current_position.distance(pos_a);
+            let dist_b = current_position.distance(pos_b);
+            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .map(|(_, transform)| transform.translation.truncate())
 }

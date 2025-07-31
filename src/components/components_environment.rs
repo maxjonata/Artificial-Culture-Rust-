@@ -33,8 +33,8 @@ pub enum ResourceType {
     Rest,
     /// Satisfies safety need - security and protection
     Safety,
-    /// Social gathering spaces - satisfies social needs
-    Social,
+    /// Social gathering spaces - satisfies loneliness by providing social interaction
+    Loneliness,
 }
 
 /// Component for entities that can own and transfer resources

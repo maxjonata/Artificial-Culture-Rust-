@@ -25,8 +25,8 @@ pub struct GameConstants {
     pub fatigue_regen: f32,
     /// Decay rate for safety
     pub safety_decay: f32,
-    /// Decay rate to need for social interaction
-    pub social_decay: f32,
+    /// Decay rate for loneliness (how quickly loneliness increases over time)
+    pub loneliness_decay: f32,
     /// Number of wells (water sources) to spawn
     pub num_wells: usize,
     /// Number of restaurants (food sources) to spawn

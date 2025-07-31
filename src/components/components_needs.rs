@@ -3,18 +3,19 @@ use bevy::prelude::*;
 /// Component representing an NPC's basic needs
 /// All values are normalized between 0.0-1.0 for ML compatibility
 /// Based on Homeostatic Drive Theory - organisms maintain internal balance
+/// IMPORTANT: All needs follow "higher value = better satisfied" semantics
 #[derive(Component, Debug, Reflect, Default, Clone, Copy)]
 #[reflect(Component)]
 pub struct BasicNeeds {
-    /// Hunger level (0.0 = starving, 1.0 = fully satisfied)
+    /// Hunger satisfaction level (0.0 = starving, 1.0 = well fed)
     pub hunger: f32,
-    /// Thirst level (0.0 = dehydrated, 1.0 = fully hydrated)
+    /// Thirst satisfaction level (0.0 = dehydrated, 1.0 = hydrated)
     pub thirst: f32,
-    /// Fatigue level (0.0 = exhausted, 1.0 = fully rested)
-    pub fatigue: f32,
-    /// Safety level (0.0 = very unsafe, 1.0 = completely safe)
+    /// Rest level (0.0 = exhausted, 1.0 = well rested)
+    pub rest: f32,
+    /// Safety satisfaction level (0.0 = very unsafe, 1.0 = safe)
     pub safety: f32,
-    /// Social need level (0.0 = isolated, 1.0 = socially fulfilled)
+    /// Social satisfaction level (0.0 = very lonely, 1.0 = socially satisfied)
     pub social: f32,
 }
 
@@ -39,21 +40,28 @@ pub enum Desire {
 
 /// Component that defines thresholds for when desires should be activated
 /// Follows Single Responsibility Principle - manages only desire thresholds
+/// NEW LOGIC: Desires activate when needs drop BELOW high_threshold, pathfinding starts when BELOW low_threshold
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct DesireThresholds {
     /// Hunger threshold below which FindFood desire is triggered
-    pub hunger_threshold: f32,
+    pub hunger_threshold: DualThreshold,
     /// Thirst threshold below which FindWater desire is triggered
-    pub thirst_threshold: f32,
-    /// Fatigue threshold above which Rest desire is triggered
-    pub fatigue_threshold: f32,
+    pub thirst_threshold: DualThreshold,
+    /// Rest threshold below which Rest desire is triggered
+    pub rest_threshold: DualThreshold,
     /// Safety threshold below which FindSafety desire is triggered
-    pub safety_threshold: f32,
+    pub safety_threshold: DualThreshold,
     /// Social threshold below which Socialize desire is triggered
-    pub social_threshold: f32,
+    pub social_threshold: DualThreshold,
     /// Priority weights for competing desires (higher = more important)
     pub priority_weights: DesirePriorities,
+}
+
+#[derive(Reflect, Debug)]
+pub struct DualThreshold {
+    pub high_threshold: f32, // Threshold below which desire is activated (start filling)
+    pub low_threshold: f32,  // Threshold below which pathfinding starts (urgent action)
 }
 
 /// Priority system for resolving competing desires
@@ -63,6 +71,6 @@ pub struct DesirePriorities {
     pub hunger: f32,    // Highest priority - survival need
     pub thirst: f32,    // Highest priority - survival need
     pub safety: f32,    // High priority - security need
-    pub fatigue: f32,   // Medium priority - physiological need
+    pub rest: f32,      // Medium priority - physiological need
     pub social: f32,    // Lower priority - social need
 }

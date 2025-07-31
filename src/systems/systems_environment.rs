@@ -1,3 +1,5 @@
+use crate::components::components_needs::Desire;
+use crate::components::components_npc::{Npc, RefillState};
 use crate::components::{BasicNeeds, Hotel, Restaurant, Well};
 use crate::systems::events::events_environment::{
     ResourceInteractionAttemptEvent, ResourceInteractionSuccessEvent
@@ -104,9 +106,9 @@ pub fn resource_interaction_system(
                     let need_type = match event.resource_type {
                         crate::components::components_environment::ResourceType::Water => NeedType::Thirst,
                         crate::components::components_environment::ResourceType::Food => NeedType::Hunger,
-                        crate::components::components_environment::ResourceType::Rest => NeedType::Fatigue,
+                        crate::components::components_environment::ResourceType::Rest => NeedType::Rest,
                         crate::components::components_environment::ResourceType::Safety => NeedType::Safety,
-                        crate::components::components_environment::ResourceType::Social => NeedType::Social,
+                        crate::components::components_environment::ResourceType::Loneliness => NeedType::Social,
                     };
 
                     need_change_events.write(NeedChangeEvent {
@@ -175,5 +177,89 @@ pub fn resource_regeneration_system(
         if restaurant.food_capacity < 1.0 {
             restaurant.food_capacity = (restaurant.food_capacity + 0.015 * delta_time).clamp(0.0, 1.0);
         }
+    }
+}
+
+/// System that manages NPC refilling state when they reach resources
+/// Based on Action-State Theory - agents have discrete action phases
+pub fn refill_management_system(
+    mut npc_query: Query<(Entity, &Transform, &Desire, &mut RefillState), With<Npc>>,
+    well_query: Query<Entity, (With<Well>, Without<Npc>)>,
+    restaurant_query: Query<Entity, (With<Restaurant>, Without<Npc>)>,
+    hotel_query: Query<Entity, (With<Hotel>, Without<Npc>)>,
+    resource_transforms: Query<&Transform, (Without<Npc>, Or<(With<Well>, With<Restaurant>, With<Hotel>)>)>,
+    time: Res<Time>,
+) {
+    const INTERACTION_DISTANCE: f32 = 40.0;
+    const REFILL_DURATION: f32 = 2.0; // 2 seconds to refill
+
+    let current_time = time.elapsed_secs();
+
+    for (entity, transform, desire, mut refill_state) in npc_query.iter_mut() {
+        let npc_position = transform.translation.truncate();
+
+        // Check if currently refilling and update timer
+        if refill_state.is_refilling {
+            if current_time - refill_state.refill_start_time >= refill_state.refill_duration {
+                // Finished refilling
+                refill_state.is_refilling = false;
+                refill_state.resource_entity = None;
+                info!("NPC finished refilling");
+            }
+            continue;
+        }
+
+        // Check if NPC should start refilling based on desire and proximity
+        let should_start_refill = match *desire {
+            Desire::FindWater => {
+                well_query.iter().any(|well_entity| {
+                    if let Ok(well_transform) = resource_transforms.get(well_entity) {
+                        let distance = npc_position.distance(well_transform.translation.truncate());
+                        if distance <= INTERACTION_DISTANCE {
+                            refill_state.is_refilling = true;
+                            refill_state.refill_start_time = current_time;
+                            refill_state.refill_duration = REFILL_DURATION;
+                            refill_state.resource_entity = Some(well_entity);
+                            info!("NPC started refilling water");
+                            return true;
+                        }
+                    }
+                    false
+                })
+            }
+            Desire::FindFood => {
+                restaurant_query.iter().any(|restaurant_entity| {
+                    if let Ok(restaurant_transform) = resource_transforms.get(restaurant_entity) {
+                        let distance = npc_position.distance(restaurant_transform.translation.truncate());
+                        if distance <= INTERACTION_DISTANCE {
+                            refill_state.is_refilling = true;
+                            refill_state.refill_start_time = current_time;
+                            refill_state.refill_duration = REFILL_DURATION;
+                            refill_state.resource_entity = Some(restaurant_entity);
+                            info!("NPC started refilling food");
+                            return true;
+                        }
+                    }
+                    false
+                })
+            }
+            Desire::Rest => {
+                hotel_query.iter().any(|hotel_entity| {
+                    if let Ok(hotel_transform) = resource_transforms.get(hotel_entity) {
+                        let distance = npc_position.distance(hotel_transform.translation.truncate());
+                        if distance <= INTERACTION_DISTANCE {
+                            refill_state.is_refilling = true;
+                            refill_state.refill_start_time = current_time;
+                            refill_state.refill_duration = REFILL_DURATION;
+                            refill_state.resource_entity = Some(hotel_entity);
+                            info!("NPC started resting");
+                            return true;
+                        }
+                    }
+                    false
+                })
+            }
+            _ => false,
+        };
     }
 }

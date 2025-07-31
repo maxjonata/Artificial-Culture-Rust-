@@ -7,7 +7,7 @@ use crate::components::{
     components_constants::GameConstants,
     components_knowledge::KnowledgeBase,
     components_needs::{Desire, DesireThresholds},
-    components_npc::{Npc, Personality},
+    components_npc::{Npc, Personality, RefillState},
     components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior},
 };
 use crate::utils::helpers::needs_helpers::create_random_basic_needs;
@@ -32,6 +32,7 @@ impl NpcBuilderExt for EmptyBuilder {
                 conscientiousness: rng.random_range(0.0..1.0),
                 neuroticism: rng.random_range(0.0..1.0),
             },
+            RefillState::default(),
             KnowledgeBase {
                 knows_rumor: false,
                 known_rumors: std::collections::HashMap::new(),
@@ -93,6 +94,7 @@ impl NpcPathfindingExt for NpcBuilder<Present, Present, Present, Missing, Missin
 }
 
 /// Implementation for adding physics after visual is present
+/// Now configured to prevent body pushing and reduce inertia
 impl NpcVisualExt for NpcBuilder<Present, Present, Present, Present, Missing, Missing> {
     fn with_physics(
         self,
@@ -103,9 +105,11 @@ impl NpcVisualExt for NpcBuilder<Present, Present, Present, Present, Missing, Mi
             RigidBody::Dynamic,
             GravityScale(0.0),
             Collider::ball(game_constants.npc_radius),
-            Restitution::coefficient(0.7),
-            Friction::coefficient(0.3),
+            Restitution::coefficient(0.0), // No bouncing to reduce pushing
+            Friction::coefficient(1.0),    // High friction to prevent sliding
             ActiveEvents::COLLISION_EVENTS,
+            LockedAxes::ROTATION_LOCKED,   // Prevent rotation
+            Ccd::enabled(),                // Continuous collision detection for better stability
         ));
 
         builder.transform_to()
