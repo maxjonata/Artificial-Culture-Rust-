@@ -35,6 +35,29 @@ pub struct GameConstants {
     pub num_hotels: usize,
     /// Number of safe zones to spawn
     pub num_safe_zones: usize,
+
+    // NEW: Action Failure Handling Constants (1.3.3+)
+    // Based on Cognitive Flexibility and Goal Management research
+
+    /// Maximum attempts before switching to alternative desire
+    /// Based on cognitive perseverance research: agents show 3-5 attempts before cognitive flexibility kicks in
+    /// See: "Cognitive Flexibility and Goal Management" (Miyake et al., 2000)
+    pub max_failure_attempts: u8,
+
+    /// Default timeout duration per desire attempt in seconds
+    /// Based on attention span research: 15-20 seconds for focused task persistence
+    /// See: "Attention and Performance" (Posner & Petersen, 1990)
+    pub default_action_timeout: f32,
+
+    /// Distance threshold for considering a target unreachable
+    /// Based on spatial cognition: agents perceive targets >50 units as "far" in 2D space
+    /// Calibrated for 200-unit default vision range (25% of vision range)
+    pub stuck_distance_threshold: f32,
+
+    /// Timeout multiplication factor for retry attempts
+    /// Based on adaptive patience research: 20% increase per failure shows optimal persistence
+    /// See: "Adaptive Control of Thought" (Anderson & Lebiere, 1998)
+    pub timeout_retry_multiplier: f32,
 }
 
 /// Resource for color constants

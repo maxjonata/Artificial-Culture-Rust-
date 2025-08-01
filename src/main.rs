@@ -7,7 +7,7 @@ use crate::components::components_constants::{ColorConstants, GameConstants, Rum
 use crate::components::components_default::CustomComponentsPlugin;
 use crate::entity_builders::entity_builders_default::{spawn_environmental_resources, spawn_test_npcs};
 use crate::systems::events::events_environment::{ResourceDepletionEvent, ResourceInteractionAttemptEvent, ResourceInteractionEvent, ResourceInteractionSuccessEvent, ResourceProximityEvent, ResourceRegenerationEvent};
-use crate::systems::events::events_needs::{CurrentDesireSet, DesireChangeEvent, DesireFulfillmentAttemptEvent, EvaluateDecision, NeedChangeEvent, NeedDecayEvent, NeedSatisfactionEvent, SocialInteractionEvent, ThresholdCrossedEvent};
+use crate::systems::events::events_needs::{ActionCompleted, CurrentDesireSet, DesireChangeEvent, DesireFulfillmentAttemptEvent, EvaluateDecision, NeedChangeEvent, NeedDecayEvent, NeedSatisfactionEvent, SocialInteractionEvent, ThresholdCrossedEvent};
 use crate::systems::systems_environment::{
     refill_management_system,
     resource_interaction_system,
@@ -20,6 +20,7 @@ use crate::systems::systems_movement::{
     physics_movement_system,
 };
 use crate::systems::systems_needs::{
+    action_failure_handling_system,
     debug_npc_status,
     decay_basic_needs,
     decision_making_system,
@@ -106,6 +107,8 @@ fn main() {
         // NEW: Decision-making events from roadmap 1.3.2
         .add_event::<EvaluateDecision>()
         .add_event::<CurrentDesireSet>()
+        // NEW: Action Management events from roadmap 1.3.3
+        .add_event::<ActionCompleted>()
         .add_event::<RumorInjectionEvent>()
         .add_event::<RumorSpreadEvent>()
         .add_event::<RumorSpreadAttemptEvent>()
@@ -164,6 +167,9 @@ fn main() {
             (
                 // Refill management - handles NPC refilling state
                 refill_management_system,            // Manages refilling state transitions
+
+                // NEW: Action failure handling - makes characters adaptive when desires fail
+                action_failure_handling_system,      // NEW: Handles failed desires with adaptive retry/switching
 
                 // Social interactions - handle NPC-to-NPC interactions
                 rumor_interaction_detection_system,  // Detects proximity for rumors

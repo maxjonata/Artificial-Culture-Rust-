@@ -87,4 +87,12 @@ pub struct CurrentDesire {
     pub utility_score: f32,
     /// Timestamp when this desire was last evaluated
     pub last_evaluated: f32,
+    /// NEW: Failure tracking for adaptive behavior
+    pub failure_count: u8,
+    /// NEW: Time when the current attempt started
+    pub attempt_start_time: f32,
+    /// NEW: Maximum time to spend on this desire before considering it failed
+    pub timeout_duration: f32,
+    /// NEW: Last known target entity (resource, NPC, etc.) for this desire
+    pub last_target: Option<Entity>,
 }

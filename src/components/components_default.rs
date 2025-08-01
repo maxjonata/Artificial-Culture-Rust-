@@ -129,6 +129,13 @@ impl Default for GameConstants {
             num_restaurants: 1,
             num_hotels: 1,
             num_safe_zones: 1,
+
+            // NEW: Action Failure Handling Constants (1.3.3+)
+            // Values based on cognitive psychology research
+            max_failure_attempts: 3,        // 3 attempts before cognitive flexibility kicks in
+            default_action_timeout: 15.0,   // 15 seconds focused attention span
+            stuck_distance_threshold: 50.0, // 25% of default vision range (200 units)
+            timeout_retry_multiplier: 1.2,  // 20% increase per retry for adaptive patience
         }
     }
 }

@@ -53,7 +53,7 @@ pub struct SocialInteractionEvent {
     pub social_boost: f32,
 }
 
-/// Event fired when an NPC attempts to fulfill a desire (seeking resources)
+/// Event fired when an NPC attempts to fulfill a desire (success or failure)
 #[derive(Event)]
 pub struct DesireFulfillmentAttemptEvent {
     pub entity: Entity,
@@ -62,13 +62,24 @@ pub struct DesireFulfillmentAttemptEvent {
     pub satisfaction_gained: f32,
 }
 
-/// Event fired when an NPC successfully satisfies a need through resource interaction
+/// Event fired when a need is satisfied through resource interaction
 #[derive(Event)]
 pub struct NeedSatisfactionEvent {
     pub entity: Entity,
     pub need_type: NeedType,
     pub satisfaction_amount: f32,
     pub resource_entity: Option<Entity>, // The resource that provided satisfaction
+}
+
+/// NEW: Event fired when an action is completed (1.3.3 Action Management)
+/// This event is sent when a CurrentDesire is fulfilled or abandoned
+#[derive(Event)]
+pub struct ActionCompleted {
+    pub entity: Entity,
+    pub completed_desire: Desire,
+    pub completion_reason: ActionCompletionReason,
+    pub duration: f32, // How long the action took to complete
+    pub success: bool, // Whether the action achieved its goal
 }
 
 /// Event that triggers decision-making evaluation for an agent
@@ -129,4 +140,17 @@ pub enum DesireChangeReason {
     NeedSatisfied,
     /// Manual override (e.g., from ML agent)
     ManualOverride,
+}
+
+/// Enum describing why an action was completed
+#[derive(Debug, Clone, Copy)]
+pub enum ActionCompletionReason {
+    /// Action succeeded - need was satisfied
+    Success,
+    /// Action was interrupted by higher priority need
+    Interrupted,
+    /// Action failed or was abandoned
+    Failed,
+    /// Action timed out
+    Timeout,
 }

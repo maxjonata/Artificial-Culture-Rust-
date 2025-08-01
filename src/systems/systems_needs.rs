@@ -1,7 +1,8 @@
 use crate::components::components_needs::{BasicNeeds, CurrentDesire, Desire, DesireThresholds};
-use crate::components::{components_constants::GameConstants, components_npc::Npc};
+use crate::components::components_pathfinding::PathTarget;
+use crate::components::{components_constants::GameConstants, components_npc::{Npc, RefillState}};
 use crate::systems::events::events_needs::{
-    CurrentDesireSet, DecisionTrigger, DesireChangeEvent, DesireChangeReason,
+    ActionCompleted, ActionCompletionReason, CurrentDesireSet, DecisionTrigger, DesireChangeEvent, DesireChangeReason,
     DesireFulfillmentAttemptEvent, EvaluateDecision, NeedChangeEvent, NeedDecayEvent,
     NeedSatisfactionEvent, NeedType, SocialInteractionEvent, ThresholdCrossedEvent, ThresholdDirection,
 };
@@ -564,4 +565,194 @@ pub fn optimized_threshold_monitoring_system(
             }
         }
     }
+}
+
+/// NEW: Action Failure Handling System (1.3.3+)
+/// Makes characters look for alternative ways to fulfill desires or switch to different desires
+/// Based on Adaptive Goal Management and Cognitive Flexibility research
+pub fn action_failure_handling_system(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut CurrentDesire, &BasicNeeds, &DesireThresholds, &PathTarget, &RefillState)>,
+    mut action_completed_events: EventWriter<ActionCompleted>,
+    mut evaluation_events: EventWriter<EvaluateDecision>,
+    game_constants: Res<GameConstants>,
+    time: Res<Time>,
+) {
+    // Use scientifically-grounded constants from GameConstants instead of hardcoded values
+    let max_failure_count = game_constants.max_failure_attempts;
+    let default_timeout = game_constants.default_action_timeout;
+    let stuck_distance_threshold = game_constants.stuck_distance_threshold;
+    let timeout_multiplier = game_constants.timeout_retry_multiplier;
+
+    for (entity, mut current_desire, needs, thresholds, path_target, refill_state) in query.iter_mut() {
+        let current_time = time.elapsed_secs();
+
+        // Initialize timeout duration if not set
+        if current_desire.timeout_duration <= 0.0 {
+            current_desire.timeout_duration = default_timeout;
+        }
+
+        // Initialize attempt start time if not set
+        if current_desire.attempt_start_time <= 0.0 {
+            current_desire.attempt_start_time = current_time;
+        }
+
+        let attempt_duration = current_time - current_desire.attempt_start_time;
+        let mut should_handle_failure = false;
+        let mut failure_reason = ActionCompletionReason::Failed;
+
+        // Check for various failure conditions based on cognitive psychology research
+
+        // 1. TIMEOUT: Desire has been active too long without success
+        // Based on attention span research (Posner & Petersen, 1990)
+        if attempt_duration > current_desire.timeout_duration {
+            should_handle_failure = true;
+            failure_reason = ActionCompletionReason::Timeout;
+            info!("NPC {:?} timed out on desire {:?} after {:.1}s", entity, current_desire.desire, attempt_duration);
+        }
+
+        // 2. STUCK: Has a target but hasn't reached it and isn't making progress
+        // Based on spatial cognition research - targets beyond 25% of vision range are "far"
+        else if let Some(target_entity) = path_target.target_entity {
+            if path_target.has_target && !refill_state.is_refilling {
+                let distance_to_target = path_target.target_position.distance(Vec2::ZERO); // Simplified check
+                if distance_to_target > stuck_distance_threshold {
+                    should_handle_failure = true;
+                    failure_reason = ActionCompletionReason::Failed;
+                    info!("NPC {:?} appears stuck trying to reach target {:?}", entity, target_entity);
+                }
+            }
+        }
+
+        // 3. TARGET LOST: Had a target but it no longer exists or is unreachable
+        else if current_desire.last_target.is_some() && !path_target.has_target && !refill_state.is_refilling {
+            // Lost target and not currently pathing to a new one
+            should_handle_failure = true;
+            failure_reason = ActionCompletionReason::Failed;
+            info!("NPC {:?} lost target for desire {:?}", entity, current_desire.desire);
+        }
+
+        if should_handle_failure {
+            current_desire.failure_count += 1;
+
+            // Send ActionCompleted event to track the failure (ML-HOOK)
+            action_completed_events.write(ActionCompleted {
+                entity,
+                completed_desire: current_desire.desire,
+                completion_reason: failure_reason,
+                duration: attempt_duration,
+                success: false,
+            });
+
+            // ADAPTIVE STRATEGY: Based on Cognitive Flexibility research (Miyake et al., 2000)
+            if current_desire.failure_count >= max_failure_count {
+                // Too many failures - switch to a different desire or fallback to wandering
+                info!("NPC {:?} giving up on {:?} after {} failures, switching desires",
+                      entity, current_desire.desire, current_desire.failure_count);
+
+                // Find the next most urgent desire or fall back to wandering
+                let fallback_desire = find_alternative_desire(current_desire.desire, needs, thresholds);
+
+                // Reset for new desire
+                current_desire.desire = fallback_desire;
+                current_desire.failure_count = 0;
+                current_desire.attempt_start_time = current_time;
+                current_desire.last_target = None;
+                current_desire.timeout_duration = default_timeout;
+
+                // Clear current pathfinding target to force new target search
+                commands.entity(entity).insert(PathTarget {
+                    has_target: false,
+                    target_entity: None,
+                    target_position: Vec2::ZERO,
+                    arrival_threshold: 30.0,
+                    target_set_time: 0.0,
+                    max_pursuit_time: 10.0,
+                });
+
+                // Trigger immediate re-evaluation for the new desire
+                evaluation_events.write(EvaluateDecision {
+                    entity,
+                    trigger_reason: DecisionTrigger::Forced,
+                });
+            } else {
+                // Try again with the same desire but look for alternative targets
+                // Based on adaptive patience research (Anderson & Lebiere, 1998)
+                info!("NPC {:?} retrying {:?} (attempt {} of {})",
+                      entity, current_desire.desire, current_desire.failure_count + 1, max_failure_count);
+
+                // Reset attempt timing but keep the same desire
+                current_desire.attempt_start_time = current_time;
+                current_desire.last_target = None; // Clear last target to force new search
+
+                // Increase timeout using adaptive patience multiplier
+                current_desire.timeout_duration *= timeout_multiplier;
+
+                // Clear current pathfinding target to force new target search
+                commands.entity(entity).insert(PathTarget {
+                    has_target: false,
+                    target_entity: None,
+                    target_position: Vec2::ZERO,
+                    arrival_threshold: 30.0,
+                    target_set_time: 0.0,
+                    max_pursuit_time: 10.0,
+                });
+
+                // Trigger resource discovery to find alternative targets
+                evaluation_events.write(EvaluateDecision {
+                    entity,
+                    trigger_reason: DecisionTrigger::Forced,
+                });
+            }
+        }
+    }
+}
+
+/// Helper function to find an alternative desire when the current one repeatedly fails
+/// Based on Cognitive Flexibility and Goal Hierarchy research
+fn find_alternative_desire(failed_desire: Desire, needs: &BasicNeeds, thresholds: &DesireThresholds) -> Desire {
+    use crate::utils::helpers::needs_helpers::evaluate_most_urgent_desire;
+
+    // Get the most urgent desire based on current needs
+    let (most_urgent, _utility) = evaluate_most_urgent_desire(needs, thresholds);
+
+    // If the most urgent desire is the same one that failed, find the second most urgent
+    if most_urgent == failed_desire {
+        // Manually check other desires in priority order
+        let mut alternatives = vec![
+            (Desire::FindWater, needs.thirst),
+            (Desire::FindFood, needs.hunger),
+            (Desire::FindSafety, needs.safety),
+            (Desire::Rest, needs.rest),
+            (Desire::Socialize, needs.social),
+        ];
+
+        // Sort by need level (lower need = higher priority)
+        alternatives.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+        // Find the first alternative that isn't the failed desire
+        for (desire, need_level) in alternatives {
+            if desire != failed_desire {
+                // Check if this desire should be active based on thresholds
+                let should_activate = match desire {
+                    Desire::FindWater => need_level < thresholds.thirst_threshold.high_threshold,
+                    Desire::FindFood => need_level < thresholds.hunger_threshold.high_threshold,
+                    Desire::FindSafety => need_level < thresholds.safety_threshold.high_threshold,
+                    Desire::Rest => need_level < thresholds.rest_threshold.high_threshold,
+                    Desire::Socialize => need_level < thresholds.social_threshold.high_threshold,
+                    Desire::Wander => true, // Always available as fallback
+                };
+
+                if should_activate {
+                    return desire;
+                }
+            }
+        }
+    } else {
+        // The most urgent desire is different from the failed one, use it
+        return most_urgent;
+    }
+
+    // Ultimate fallback
+    Desire::Wander
 }

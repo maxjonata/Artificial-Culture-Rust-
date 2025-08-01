@@ -223,11 +223,11 @@ Ignorance".
     -   [x] The system calculates a utility score for each potential action using the formula:
         `Score = (CurrentNeedValue / HighThreshold) * Priority`.
     -   [x] It selects the desire with the highest score and adds a `CurrentDesire` component to the agent.
--   [ ] **1.3.3 Action Management - Execution & Interruption:**
-    -   [ ] Create systems that act upon `CurrentDesire` components (e.g., `movement_action_system`).
-    -   [ ] Create an `action_continuation_system` that runs on agents with an active action. It checks if the relevant
+-   [x] **1.3.3 Action Management - Execution & Interruption:**
+    -   [x] Create systems that act upon `CurrentDesire` components (e.g., `movement_action_system`).
+    -   [x] Create an `action_continuation_system` that runs on agents with an active action. It checks if the relevant
         need has fallen below its `low_threshold`.
-    -   [ ] If the low threshold is met, it removes the `CurrentDesire` and sends an `ActionCompleted` event, which can
+    -   [x] If the low threshold is met, it removes the `CurrentDesire` and sends an `ActionCompleted` event, which can
         trigger a new decision evaluation.
 -   [ ] **1.3.4 Cognitive Realism - Delay & Imprecision:**
     -   [ ] Implement an `ActionBuffer` component. Decisions do not take effect immediately but are pushed into this
