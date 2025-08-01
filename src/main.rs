@@ -42,7 +42,7 @@ use crate::systems::systems_rumor::{
     rumor_interaction_detection_system,
     rumor_transmission_system,
 };
-use crate::systems::systems_visual::color_system;
+use crate::systems::systems_visual::{color_system, update_apparent_state_system, vision_system};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy_inspector_egui::{
@@ -131,12 +131,14 @@ fn main() {
             // NEW: Periodic decision evaluation system from roadmap 1.3.2
             periodic_decision_trigger_system,   // Fires EvaluateDecision events periodically
 
-            // PHASE 1: Core State Updates (Event Producers)
-            // These systems generate the primary events that drive other systems
+            // PHASE 1: Core State Updates and Perception (Event Producers)
+            // NEW: Vision System 1.3.1 - Must run early to populate perception data
             (
+                update_apparent_state_system,           // NEW: Updates externally visible state
+                vision_system,                          // NEW: Populates perception data using spatial queries
                 decay_basic_needs,                      // Produces NeedChangeEvent, NeedDecayEvent
                 optimized_threshold_monitoring_system,  // NEW: Optimized version that triggers decision evaluation
-            ).chain(),
+            ),
 
             // PHASE 2: Decision Making (Event Consumers → Event Producers)
             // NEW: Core decision-making system from roadmap 1.3.2
@@ -155,7 +157,7 @@ fn main() {
                 steering_behavior_system,       // Consumes pathfinding data, applies weighted utility
                 physics_movement_system,        // Executes actual movement
                 boundary_collision_system,      // Handles movement constraints
-            ).chain(),
+            ),
 
             // PHASE 4: Interaction Systems (Event Consumers → Event Producers)
             // These systems handle entity interactions based on movement/proximity

@@ -4,7 +4,7 @@ use crate::components::components_constants::{ColorConstants, GameConstants, Rum
 use crate::components::components_environment::{Hotel, InteractableResource, Resource, ResourceOwnership, ResourceTransfer, ResourceType, Restaurant, SafeZone, Well};
 use crate::components::components_knowledge::KnowledgeBase;
 use crate::components::components_needs::{BasicNeeds, CurrentDesire, Desire, DesirePriorities, DesireThresholds, DualThreshold};
-use crate::components::components_npc::{Npc, Personality, RefillState};
+use crate::components::components_npc::{ApparentState, Npc, PerceivedEntities, Personality, Posture, RefillState, VisionRange};
 use crate::components::components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior};
 
 /// Plugin for registering all custom components with Bevy's reflection system
@@ -17,6 +17,11 @@ impl Plugin for CustomComponentsPlugin {
             .register_type::<Npc>()
             .register_type::<Personality>()
             .register_type::<RefillState>()
+            // Vision components - NEW for 1.3.1 Perception System
+            .register_type::<ApparentState>()
+            .register_type::<PerceivedEntities>()
+            .register_type::<VisionRange>()
+            .register_type::<Posture>()
             // Knowledge components
             .register_type::<KnowledgeBase>()
             // Needs components
@@ -185,6 +190,39 @@ impl Default for ResourceMemory {
             known_safe_zones: Vec::new(),
             discovery_radius: 100.0,
             memory_decay_rate: 0.01,
+        }
+    }
+}
+
+impl Default for ApparentState {
+    fn default() -> Self {
+        Self {
+            is_running: false,
+            is_carrying_item: false,
+            posture: Posture::Neutral,
+            is_interacting: false,
+        }
+    }
+}
+
+impl Default for VisionRange {
+    fn default() -> Self {
+        Self {
+            // Default vision range of 200 units - reasonable for 2D simulation
+            max_distance: 200.0,
+            // Default FOV of 120 degrees (2.094 radians) - human-like peripheral vision
+            field_of_view: 2.094,
+            requires_line_of_sight: true,
+        }
+    }
+}
+
+impl Default for PerceivedEntities {
+    fn default() -> Self {
+        Self {
+            in_sight: Vec::new(),
+            // Default attention limit of 7 entities - based on Miller's cognitive research
+            attention_limit: 7,
         }
     }
 }

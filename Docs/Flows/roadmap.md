@@ -210,12 +210,12 @@ application.
 **Objective:** Implement the core cognitive loop of Perception -> Cognition -> Action, respecting the "Mantle of
 Ignorance".
 
--   [ ] **1.3.1 Perception System - Vision:**
-    -   [ ] Create a `vision_system` that uses spatial queries (e.g., Rapier's `query_pipeline`) to find nearby
+-   [x] **1.3.1 Perception System - Vision:**
+    -   [x] Create a `vision_system` that uses spatial queries (e.g., Rapier's `query_pipeline`) to find nearby
         entities.
-    -   [ ] Define an `ApparentState` component that contains only externally visible information (e.g., `is_running`,
+    -   [x] Define an `ApparentState` component that contains only externally visible information (e.g., `is_running`,
         `is_carrying_item`).
-    -   [ ] The system populates an agent's `PerceivedEntities: Vec<(Entity, ApparentState)>` component. **Crucially, it
+    -   [x] The system populates an agent's `PerceivedEntities: Vec<(Entity, ApparentState)>` component. **Crucially, it
         must not grant access to internal components of other entities.**
 -   [x] **1.3.2 Decision-Making - Utility Calculation:**
     -   [x] Create a `decision_making_system` triggered by an `EvaluateDecision` event.

@@ -7,7 +7,7 @@ use crate::components::{
     components_constants::GameConstants,
     components_knowledge::KnowledgeBase,
     components_needs::{Desire, DesireThresholds},
-    components_npc::{Npc, Personality, RefillState},
+    components_npc::{ApparentState, Npc, PerceivedEntities, Personality, RefillState, VisionRange},
     components_pathfinding::{PathTarget, ResourceMemory, SteeringBehavior},
 };
 use crate::utils::helpers::needs_helpers::create_random_basic_needs;
@@ -70,6 +70,7 @@ impl NpcNeedsExt for NpcBuilder<Present, Present, Missing, Missing, Missing, Mis
 }
 
 /// Implementation for adding visual components after pathfinding is present
+/// NEW: Now includes Vision System 1.3.1 components for perception
 impl NpcPathfindingExt for NpcBuilder<Present, Present, Present, Missing, Missing, Missing> {
     fn with_visual(
         self,
@@ -80,6 +81,7 @@ impl NpcPathfindingExt for NpcBuilder<Present, Present, Present, Missing, Missin
         let sprite_size = Vec2::splat(game_constants.npc_radius * 2.0);
 
         let builder = self.add_bundle(commands, (
+            // Visual rendering components
             Sprite {
                 image: asset_server.load("person.png"),
                 custom_size: Some(sprite_size),
@@ -87,6 +89,10 @@ impl NpcPathfindingExt for NpcBuilder<Present, Present, Present, Missing, Missin
             },
             Name::new("NPC".to_string()),
             Transform::default(),
+            // NEW: Vision System 1.3.1 components following "Mantle of Ignorance"
+            ApparentState::default(),      // What others can observe about this agent
+            PerceivedEntities::default(),  // What this agent perceives about others
+            VisionRange::default(),        // This agent's visual perception capabilities
         ));
 
         builder.transform_to()
