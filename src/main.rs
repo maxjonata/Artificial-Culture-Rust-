@@ -94,7 +94,7 @@ fn main() {
         .insert_resource(ColorConstants::default())
 
         // Register Rapier debug render context for inspector control
-        .register_type::<bevy_rapier2d::render::DebugRenderContext>()
+        .register_type::<DebugRenderContext>()
 
         // ML-HOOK: Register all events for quantifiable behavior tracking
         .add_event::<NeedDecayEvent>()

@@ -195,7 +195,7 @@ pub fn refill_management_system(
 
     let current_time = time.elapsed_secs();
 
-    for (entity, transform, desire, mut refill_state) in npc_query.iter_mut() {
+    for (_entity, transform, desire, mut refill_state) in npc_query.iter_mut() {
         let npc_position = transform.translation.truncate();
 
         // Check if currently refilling and update timer

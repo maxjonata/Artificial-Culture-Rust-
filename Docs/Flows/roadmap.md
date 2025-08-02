@@ -280,7 +280,7 @@ Ignorance".
 -   [ ] **2.2.2 Trust Modification System:** Create systems that listen for positive (`HelpedInNeed`) and negative (
     `Theft`, `Attack`) interaction events and modify the `trust` values in the `SocialNetwork`.
 -   [ ] **2.2.3 Group Formation:** Implement a periodic `group_cohesion_system` that analyzes the `SocialNetwork`.
-    Agents with high mutual trust can form a `Group` entity, adding each other to a `Members` component.
+    Agents with high mutual trust can form a `Group` _entity, adding each other to a `Members` component.
 
 ## Phase 3: Optimization & Scaling (Local Simulation)
 

@@ -89,7 +89,7 @@ pub fn decay_basic_needs(
             entity,
             hunger_change,
             thirst_change,
-            rest_change: rest_change,
+            rest_change,
             safety_change,
             social_change,
         });
@@ -164,9 +164,8 @@ pub fn desire_fulfillment_system(
     for event in desire_events.read() {
         // Only process desires that indicate seeking behavior
         if matches!(event.new_desire, Desire::FindFood | Desire::FindWater | Desire::Rest | Desire::FindSafety)
-            && let (Ok(mut needs)) = (
-            needs_query.get_mut(event.entity)
-        ) {
+            && let Ok(mut needs) = needs_query.get_mut(event.entity)
+        {
             // Simulate resource interaction based on desire type
             let (need_type, satisfaction_amount, success) = match event.new_desire {
                 Desire::FindFood => {

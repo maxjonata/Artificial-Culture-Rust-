@@ -138,12 +138,12 @@ pub fn desire_pathfinding_system(
                 target_position: target_pos,
                 target_entity: None, // TODO: Store actual target entity for social interactions
                 target_type: match *desire {
-                    Desire::FindWater => crate::components::components_environment::ResourceType::Water,
-                    Desire::FindFood => crate::components::components_environment::ResourceType::Food,
-                    Desire::Rest => crate::components::components_environment::ResourceType::Rest,
-                    Desire::FindSafety => crate::components::components_environment::ResourceType::Safety,
-                    Desire::Socialize => crate::components::components_environment::ResourceType::Water, // TODO: Add Social resource type
-                    _ => crate::components::components_environment::ResourceType::Water, // Default
+                    Desire::FindWater => ResourceType::Water,
+                    Desire::FindFood => ResourceType::Food,
+                    Desire::Rest => ResourceType::Rest,
+                    Desire::FindSafety => ResourceType::Safety,
+                    Desire::Socialize => ResourceType::Water, // TODO: Add Social resource type
+                    _ => ResourceType::Water, // Default
                 },
                 distance_to_target: npc_position.distance(target_pos),
             });

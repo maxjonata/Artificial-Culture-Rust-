@@ -76,9 +76,9 @@ pub fn resource_matches_need(resource_type: ResourceType, need_type: crate::syst
     match (resource_type, need_type) {
         (ResourceType::Water, NeedType::Thirst) => true,
         (ResourceType::Food, NeedType::Hunger) => true,
-        (ResourceType::Rest, crate::systems::events::events_needs::NeedType::Rest) => true,
+        (ResourceType::Rest, NeedType::Rest) => true,
         (ResourceType::Safety, NeedType::Safety) => true,
-        (ResourceType::Loneliness, crate::systems::events::events_needs::NeedType::Social) => true,
+        (ResourceType::Loneliness, NeedType::Social) => true,
         _ => false,
     }
 }
