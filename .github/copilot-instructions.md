@@ -56,7 +56,7 @@ each agent, and vice-versa.
 
 **The word "Resource" has two distinct meanings in this project. You MUST distinguish between them.**
 
-1. **In-Game Resource (The Simulation Concept):** Refers to items within the game world that can be collected, consumed,
+1. **Any_Thing:** Refers to items within the game world that can be collected, consumed,
    or owned by NPCs (e.g., food, wood, gold).
     - **Implementation:** Typically implemented as a **`Component`** on an _entity (e.g., `ResourceSource`,
       `Inventory`).
@@ -92,48 +92,48 @@ each agent, and vice-versa.
 
 **This is a critical instruction. The project is organized by functional domain (feature), not by code type.**
 
--   **Core Principle:** All code related to a single feature (e.g., "cognition", "navigation", "physiology") is grouped
-    into its own module directory under `src/ai/`.
--   **Module Structure:** Each domain module (e.g., `src/ai/cognition/`) contains all its related code: components,
-    systems, events, and its own `mod.rs` file.
--   **File Naming:** Use `snake_case`. Files inside a domain module should be named logically (e.g., `decision.rs`,
-    `memory.rs`).
+- **Core Principle:** All code related to a single feature (e.g., "cognition", "navigation", "physiology") is grouped
+  into its own module directory under `src/ai/`.
+- **Module Structure:** Each domain module (e.g., `src/ai/cognition/`) contains all its related code: components,
+  systems, events, and its own `mod.rs` file.
+- **File Naming:** Use `snake_case`. Files inside a domain module should be named logically (e.g., `decision.rs`,
+  `memory.rs`).
 
--   **`src/ai/`:** The root for all agent intelligence logic.
-    -   **`src/ai/{domain_name}/` (e.g., `src/ai/physiology/`):**
-        -   This is a self-contained module for a specific feature.
-        -   It contains all related components, systems, and events.
-        -   **Example:** `src/ai/physiology/needs.rs` would contain the `Needs` component, the `needs_decay_system`, and
-            any related events like `NeedsThresholdCrossed`.
-    -   **`src/ai/{domain_name}/mod.rs`:**
-        -   Declares the sub-modules (like `pub mod needs;`).
-        -   Defines the domain's `Plugin` (e.g., `pub struct PhysiologyPlugin;`).
+- **`src/ai/`:** The root for all agent intelligence logic.
+    - **`src/ai/{domain_name}/` (e.g., `src/ai/physiology/`):**
+        - This is a self-contained module for a specific feature.
+        - It contains all related components, systems, and events.
+        - **Example:** `src/ai/physiology/needs.rs` would contain the `Needs` component, the `needs_decay_system`, and
+          any related events like `NeedsThresholdCrossed`.
+    - **`src/ai/{domain_name}/mod.rs`:**
+        - Declares the sub-modules (like `pub mod needs;`).
+        - Defines the domain's `Plugin` (e.g., `pub struct PhysiologyPlugin;`).
 
--   **`src/core/`:** For truly generic, cross-domain code.
-    -   **`src/core/builders.rs`:** Contains the generic Type-State Builder and all specific builder definitions (like
-        `NpcBuilder`).
-    -   **`src/core/utils.rs`:** Contains utility functions that are not tied to any specific domain.
+- **`src/core/`:** For truly generic, cross-domain code.
+    - **`src/core/builders.rs`:** Contains the generic Type-State Builder and all specific builder definitions (like
+      `NpcBuilder`).
+    - **`src/core/utils.rs`:** Contains utility functions that are not tied to any specific domain.
 
--   **`src/presentation/`:** For code related to visualization and debugging.
-    -   **`src/presentation/debug_ui.rs`:** Contains the `debug_ui_system` for rendering UI overlays. This module is for
-        **human observation only** and must not interact with the AI's decision-making loop.
+- **`src/presentation/`:** For code related to visualization and debugging.
+    - **`src/presentation/debug_ui.rs`:** Contains the `debug_ui_system` for rendering UI overlays. This module is for
+      **human observation only** and must not interact with the AI's decision-making loop.
 
--   **`src/main.rs`:**
-    -   The entry point of the application.
-    -   Its primary role is to build the Bevy `App` and **add the plugins** from each domain (e.g.,
-        `.add_plugins(PhysiologyPlugin)`).
+- **`src/main.rs`:**
+    - The entry point of the application.
+    - Its primary role is to build the Bevy `App` and **add the plugins** from each domain (e.g.,
+      `.add_plugins(PhysiologyPlugin)`).
 
 ## 5. Bevy Plugin Architecture (MANDATORY)
 
 **The project's architecture is built on Bevy Plugins. Each functional domain MUST be encapsulated in its own plugin.**
 
--   **Plugin Definition:** Each domain module (e.g., `src/ai/physiology/`) must define a public `struct` that implements
-    the `Plugin` trait (e.g., `pub struct PhysiologyPlugin;`).
--   **Responsibilities of a Plugin:** The `build` method of a domain's plugin is responsible for:
-    1.  **Registering all components and events** defined within that domain using `.register_type::<T>()`.
-    2.  **Adding all systems** defined within that domain to the appropriate `Schedule` (e.g., `Update`, `Startup`).
--   **Central Registration:** The `main.rs` file simply adds these domain plugins to the `App`. This keeps `main.rs`
-    clean and makes it easy to enable or disable entire features of the simulation.
+- **Plugin Definition:** Each domain module (e.g., `src/ai/physiology/`) must define a public `struct` that implements
+  the `Plugin` trait (e.g., `pub struct PhysiologyPlugin;`).
+- **Responsibilities of a Plugin:** The `build` method of a domain's plugin is responsible for:
+    1. **Registering all components and events** defined within that domain using `.register_type::<T>()`.
+    2. **Adding all systems** defined within that domain to the appropriate `Schedule` (e.g., `Update`, `Startup`).
+- **Central Registration:** The `main.rs` file simply adds these domain plugins to the `App`. This keeps `main.rs`
+  clean and makes it easy to enable or disable entire features of the simulation.
 
 ## 6. Technical Stack & Dynamic Versioning
 
@@ -204,73 +204,74 @@ at `src/entity_builders/generic_type_safe_builder.rs`.**
       ```
 
 ## 11. Code Snippet Examples (The "Artificial Society" Way)
--   **Example of a Domain Module (`src/ai/physiology/needs.rs`):**
-    ```rust
-    use bevy::prelude::*;
 
-    // --- Component Definition ---
-    /// Stores the agent's primary physiological needs.
-    #[derive(Component, Debug, Reflect, Default)]
-    #[reflect(Component)]
-    pub struct Needs {
-        pub hunger: f32,
-    }
+- **Example of a Domain Module (`src/ai/physiology/needs.rs`):**
+  ```rust
+  use bevy::prelude::*;
 
-    // --- Event Definition ---
-    #[derive(Event)]
-    pub struct NeedsThresholdCrossed {
-        pub agent: Entity,
-        pub need: NeedType,
-    }
-    
-    #[derive(Debug)]
-    pub enum NeedType { Hunger }
+  // --- Component Definition ---
+  /// Stores the agent's primary physiological needs.
+  #[derive(Component, Debug, Reflect, Default)]
+  #[reflect(Component)]
+  pub struct Needs {
+      pub hunger: f32,
+  }
 
-    // --- System Definition ---
-    /// System that decays needs over time.
-    pub fn needs_decay_system(mut query: Query<&mut Needs>) {
-        // ... logic ...
-    }
-    ```
+  // --- Event Definition ---
+  #[derive(Event)]
+  pub struct NeedsThresholdCrossed {
+      pub agent: Entity,
+      pub need: NeedType,
+  }
+  
+  #[derive(Debug)]
+  pub enum NeedType { Hunger }
 
--   **Example of a Domain Plugin (`src/ai/physiology/mod.rs`):**
-    ```rust
-    use bevy::prelude::*;
-    pub mod needs; // Make the contents of needs.rs public within the module
+  // --- System Definition ---
+  /// System that decays needs over time.
+  pub fn needs_decay_system(mut query: Query<&mut Needs>) {
+      // ... logic ...
+  }
+  ```
 
-    use needs::{needs_decay_system, Needs, NeedsThresholdCrossed};
+- **Example of a Domain Plugin (`src/ai/physiology/mod.rs`):**
+  ```rust
+  use bevy::prelude::*;
+  pub mod needs; // Make the contents of needs.rs public within the module
 
-    pub struct PhysiologyPlugin;
+  use needs::{needs_decay_system, Needs, NeedsThresholdCrossed};
 
-    impl Plugin for PhysiologyPlugin {
-        fn build(&self, app: &mut App) {
-            app
-                // Register components and events from this domain
-                .register_type::<Needs>()
-                .add_event::<NeedsThresholdCrossed>()
-                // Add systems from this domain
-                .add_systems(Update, needs_decay_system);
-        }
-    }
-    ```
+  pub struct PhysiologyPlugin;
 
--   **Example of `main.rs`:**
-    ```rust
-    use bevy::prelude::*;
-    use artificial_society::ai::physiology::PhysiologyPlugin;
-    use artificial_society::ai::cognition::CognitionPlugin;
-    // ... other imports
+  impl Plugin for PhysiologyPlugin {
+      fn build(&self, app: &mut App) {
+          app
+              // Register components and events from this domain
+              .register_type::<Needs>()
+              .add_event::<NeedsThresholdCrossed>()
+              // Add systems from this domain
+              .add_systems(Update, needs_decay_system);
+      }
+  }
+  ```
 
-    fn main() {
-        App::new()
-            .add_plugins(DefaultPlugins)
-            // Add the domain plugins. This is the only place they are registered.
-            .add_plugins(PhysiologyPlugin)
-            .add_plugins(CognitionPlugin)
-            // ... add other domain plugins
-            .run();
-    }
-    ```
+- **Example of `main.rs`:**
+  ```rust
+  use bevy::prelude::*;
+  use artificial_society::ai::physiology::PhysiologyPlugin;
+  use artificial_society::ai::cognition::CognitionPlugin;
+  // ... other imports
+
+  fn main() {
+      App::new()
+          .add_plugins(DefaultPlugins)
+          // Add the domain plugins. This is the only place they are registered.
+          .add_plugins(PhysiologyPlugin)
+          .add_plugins(CognitionPlugin)
+          // ... add other domain plugins
+          .run();
+  }
+  ```
 
 ## 12. High-Level Runtime Architecture Overview
 
@@ -304,3 +305,30 @@ should be written with this separation in mind.
 **Rule:** When writing a system, always consider: "Does this logic belong in a fast, local simulation (Bevy Worker) or
 as a secure, global state change (SDB Reducer)?" The default for complex, continuous processes is **always** the Bevy
 Worker.
+
+## 13. Terminal Command Generation (Safety Rule)
+
+**This is a non-negotiable rule for generating any shell commands.**
+
+**Principle: Clarity and Step-by-Step Execution.** All terminal commands must be presented as a sequence of individual,
+atomic steps.
+
+**Strict Rules:**
+
+1. **One Command Per Line:** Each command must be on its own line.
+2. **No Chaining:** **DO NOT** use command chaining operators like `&&`, `||`, or `;`.
+3. **No Piping:** **DO NOT** use pipes (`|`). If a multi-step process is needed, explain it in text and provide the
+   separate commands.
+4. **No Complex Scripts:** Do not generate multi-line shell scripts. Provide the sequence of simple commands instead.
+
+**Correct Pattern:**
+> To generate a dependency graph, follow these steps:
+>
+> 1. First, generate the `.dot` file from cargo:
+     >     ```bash
+     > cargo depgraph --all-deps > dependency_graph.dot
+     >     ```
+> 2. Then, use the `dot` command to convert the file into an image:
+     >     ```bash
+     > dot -Tpng dependency_graph.dot -o dependency_graph.png
+     >     ```

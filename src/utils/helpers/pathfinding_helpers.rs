@@ -1,5 +1,6 @@
-use crate::components::components_npc::Npc;
-use crate::components::components_pathfinding::{PathTarget, SteeringBehavior};
+use crate::ai::navigation::pathfinding::{PathTarget, SteeringBehavior};
+// Updated imports to use new domain structure
+use crate::core::entities::Npc;
 use bevy::prelude::*;
 
 /// Helper function implementing Craig Reynolds' Seek steering behavior

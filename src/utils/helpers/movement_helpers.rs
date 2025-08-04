@@ -1,4 +1,4 @@
-use crate::components::components_needs::Desire;
+use crate::ai::cognition::desires::Desire;
 use bevy::prelude::*;
 
 /// Helper function implementing boundary physics based on elastic collision theory

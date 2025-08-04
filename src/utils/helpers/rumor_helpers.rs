@@ -1,4 +1,5 @@
-use crate::components::components_npc::Personality;
+// Updated imports to use new domain structure
+use crate::ai::cognition::personality::Personality;
 
 /// Helper function implementing Social Influence Theory for rumor transmission
 /// Based on Katz & Lazarsfeld's Two-Step Flow Theory and Social Network Analysis

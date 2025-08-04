@@ -1,5 +1,7 @@
-use crate::components::components_constants::GameConstants;
-use crate::components::components_needs::{BasicNeeds, Desire, DesireThresholds};
+use crate::ai::cognition::desires::Desire;
+use crate::ai::physiology::needs::{BasicNeeds, DesireThresholds};
+// Updated imports to use new domain structure
+use crate::core::constants::GameConstants;
 
 /// Helper function to decay needs over time based on physiological models
 /// Based on Homeostatic Drive Theory - all needs naturally decrease over time without intervention
@@ -9,7 +11,7 @@ pub fn decay_needs(needs: &mut BasicNeeds, game_constants: &GameConstants, delta
     let thirst_change = -game_constants.thirst_decay * delta_time; // Thirst satisfaction DECREASES over time
     let rest_change = -game_constants.fatigue_regen * delta_time; // Rest level DECREASES over time (fatigue increases)
     let safety_change = -game_constants.safety_decay * delta_time; // Safety DECREASES over time
-    let social_change = -game_constants.loneliness_decay * delta_time; // Social satisfaction DECREASES over time
+    let social_change = -game_constants.social_decay * delta_time; // Social satisfaction DECREASES over time
 
     needs.hunger = (needs.hunger + hunger_change).clamp(0.0, 1.0);
     needs.thirst = (needs.thirst + thirst_change).clamp(0.0, 1.0);
@@ -124,55 +126,55 @@ pub fn calculate_desire_utility(desire: Desire, basic_needs: &BasicNeeds, thresh
     match desire {
         Desire::FindSafety => {
             let urgency = 1.0 - basic_needs.safety;
-            let max_urgency = 1.0 - thresholds.safety_threshold.high_threshold.min(0.999);
-            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.safety
+            let max_urgency: f32 = 1.0 - thresholds.safety_threshold.urgent_threshold.min(0.999);
+            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.safety_weight
         }
         Desire::FindWater => {
             let urgency = 1.0 - basic_needs.thirst;
-            let max_urgency = 1.0 - thresholds.thirst_threshold.high_threshold.min(0.999);
-            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.thirst
+            let max_urgency: f32 = 1.0 - thresholds.thirst_threshold.urgent_threshold.min(0.999);
+            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.thirst_weight
         }
         Desire::FindFood => {
             let urgency = 1.0 - basic_needs.hunger;
-            let max_urgency = 1.0 - thresholds.hunger_threshold.high_threshold.min(0.999);
-            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.hunger
+            let max_urgency: f32 = 1.0 - thresholds.hunger_threshold.urgent_threshold.min(0.999);
+            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.hunger_weight
         }
         Desire::Rest => {
             let urgency = 1.0 - basic_needs.rest;
-            let max_urgency = 1.0 - thresholds.rest_threshold.high_threshold.min(0.999);
-            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.rest
+            let max_urgency: f32 = 1.0 - thresholds.rest_threshold.urgent_threshold.min(0.999);
+            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.rest_weight
         }
         Desire::Socialize => {
             let urgency = 1.0 - basic_needs.social;
-            let max_urgency = 1.0 - thresholds.social_threshold.high_threshold.min(0.999);
-            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.social
+            let max_urgency: f32 = 1.0 - thresholds.social_threshold.urgent_threshold.min(0.999);
+            (urgency / max_urgency.max(0.001)) * thresholds.priority_weights.social_weight
         }
         Desire::Wander => 0.5, // Low utility for wandering
     }
 }
 
-/// Helper function to check if a desire should be activated (need value < high_threshold)
+/// Helper function to check if a desire should be activated (need value < urgent_threshold)
 /// FIXED: Now activates when satisfaction is BELOW threshold (need is urgent)
 pub fn should_activate_desire(desire: Desire, basic_needs: &BasicNeeds, thresholds: &DesireThresholds) -> bool {
     match desire {
-        Desire::FindSafety => basic_needs.safety < thresholds.safety_threshold.high_threshold,
-        Desire::FindWater => basic_needs.thirst < thresholds.thirst_threshold.high_threshold,
-        Desire::FindFood => basic_needs.hunger < thresholds.hunger_threshold.high_threshold,
-        Desire::Rest => basic_needs.rest < thresholds.rest_threshold.high_threshold,
-        Desire::Socialize => basic_needs.social < thresholds.social_threshold.high_threshold,
+        Desire::FindSafety => basic_needs.safety < thresholds.safety_threshold.urgent_threshold,
+        Desire::FindWater => basic_needs.thirst < thresholds.thirst_threshold.urgent_threshold,
+        Desire::FindFood => basic_needs.hunger < thresholds.hunger_threshold.urgent_threshold,
+        Desire::Rest => basic_needs.rest < thresholds.rest_threshold.urgent_threshold,
+        Desire::Socialize => basic_needs.social < thresholds.social_threshold.urgent_threshold,
         _ => false,
     }
 }
 
-/// Helper function to check if a desire should be deactivated (need value > low_threshold)
-/// FIXED: Now deactivates when satisfaction is ABOVE low threshold (need is satisfied enough)
+/// Helper function to check if a desire should be deactivated (need value > moderate_threshold)
+/// FIXED: Now deactivates when satisfaction is ABOVE moderate threshold (need is satisfied enough)
 pub fn should_deactivate_desire(desire: Desire, basic_needs: &BasicNeeds, thresholds: &DesireThresholds) -> bool {
     match desire {
-        Desire::FindSafety => basic_needs.safety > thresholds.safety_threshold.low_threshold,
-        Desire::FindWater => basic_needs.thirst > thresholds.thirst_threshold.low_threshold,
-        Desire::FindFood => basic_needs.hunger > thresholds.hunger_threshold.low_threshold,
-        Desire::Rest => basic_needs.rest > thresholds.rest_threshold.low_threshold,
-        Desire::Socialize => basic_needs.social > thresholds.social_threshold.low_threshold,
+        Desire::FindSafety => basic_needs.safety > thresholds.safety_threshold.moderate_threshold,
+        Desire::FindWater => basic_needs.thirst > thresholds.thirst_threshold.moderate_threshold,
+        Desire::FindFood => basic_needs.hunger > thresholds.hunger_threshold.moderate_threshold,
+        Desire::Rest => basic_needs.rest > thresholds.rest_threshold.moderate_threshold,
+        Desire::Socialize => basic_needs.social > thresholds.social_threshold.moderate_threshold,
         _ => false,
     }
 }

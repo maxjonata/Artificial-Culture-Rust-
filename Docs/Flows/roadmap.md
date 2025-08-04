@@ -99,9 +99,9 @@ reinforcement learning models. Therefore:
   295-355. - **Constraint satisfaction + coherence**
 - **Eliasmith, C. (2013).** "How to build a brain: A neural architecture for biological cognition." Oxford University
   Press. - **Unified neural architecture**
-- **O'Reilly, R.C., et al. (2016).** "Recurrent processing during object recognition." *Frontiers in Psychology*, 3,
-    124.
-        - **Recurrent processing and coherence**
+- **O'Reilly, R.C., et al. (2016).** "Recurrent processing during object recognition." *Frontiers in Psychology*
+
+- **Recurrent processing and coherence**
 
 ### **Social Psychology:**
 
