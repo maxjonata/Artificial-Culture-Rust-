@@ -1,37 +1,41 @@
-pub mod fps_display;
-pub mod vision_debug;
+//! Presentation layer for the Artificial Society simulation.
+//!
+//! This module handles all visualization, debugging, and user interface systems.
+//! Following the architectural separation of concerns, presentation systems are
+//! purely for human observation and must not interact with the AI decision-making
+//! loop to maintain simulation integrity.
+//!
+//! # Sub-modules
+//!
+//! - `debug_ui/`: Developer debugging interfaces and agent state inspection
+//! - `visualization/`: Agent behavior visualization and world state rendering
 
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+mod profiler;
+
 use bevy::prelude::*;
-use vision_debug::VisionDebugSettings;
+use iyes_perf_ui::PerfUiPlugin;
 
-use crate::presentation::fps_display::{spawn_fps_display_system, update_fps_display_system, FpsData, FpsDisplay};
-
-/// Plugin for presentation layer - handles UI, debugging, and visualization
-/// Separate from game logic - purely for human observation and interaction
+/// Main presentation plugin that orchestrates all visualization systems.
+///
+/// This plugin manages the human-facing aspects of the simulation including
+/// debug overlays, performance monitoring, and visual representations of
+/// agent behavior. All systems in this plugin are read-only observers that
+/// do not influence the simulation state.
 pub struct PresentationPlugin;
 
 impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Add Bevy's frame time diagnostics plugin for FPS tracking
-            .add_plugins(FrameTimeDiagnosticsPlugin::default())
-
-            // Insert vision debug settings resource
-            .insert_resource(VisionDebugSettings::default())
-
-            // Register presentation components
-            .register_type::<FpsDisplay>()
-            .register_type::<FpsData>()
-            // Register components from this domain
-            .register_type::<vision_debug::VisionDebugRenderer>()
-
-            // Add presentation systems
-            .add_systems(Startup, spawn_fps_display_system)
-            .add_systems(Update, (
-                update_fps_display_system,
-                vision_debug::vision_cone_debug_system,
-                vision_debug::update_vision_facing_system,
-            ));
+            // Add debug UI for agent state inspection
+            .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
+            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+            .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
+            .add_plugins(PerfUiPlugin)
+            .add_systems(
+                Startup,
+                (
+                    profiler::spawn_perf_ui,
+                ),
+            );
     }
 }

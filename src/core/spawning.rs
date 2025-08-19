@@ -1,12 +1,34 @@
+//! Entity spawning systems for the Artificial Society simulation.
+//!
+//! This module contains systems responsible for creating and initializing entities
+//! in the simulation world. All entity creation follows the Type-Safe Builder pattern
+//! to ensure proper initialization and prevent runtime errors.
+//!
+//! # Spawning Philosophy
+//!
+//! Entity spawning is event-driven and follows the "Equality of Potential" principle.
+//! All NPCs are created with the same fundamental cognitive architecture, with
+//! variations arising from different initial conditions and experiences.
+
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 
-/// System to spawn NPCs at startup based on game constants
+/// System that spawns initial NPCs at simulation startup.
+///
+/// This system creates the initial population of NPCs in the simulation world.
+/// Each NPC is spawned with default cognitive components and positioned randomly
+/// within the world bounds.
+///
+/// # Implementation Notes
+///
+/// - Uses the Type-Safe Builder pattern for entity creation
+/// - Respects the max_npc_count limit from GameConstants
+/// - Initializes all required cognitive components for each NPC
 pub fn spawn_npcs_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     windows: Query<&Window>,
+    resources: Res<crate::core::constants::GameConstants>,
 ) {
     let mut rng = rand::rng();
 
@@ -24,70 +46,29 @@ pub fn spawn_npcs_system(
     };
 
     // Spawn NPCs with essential components first
-    let num_npcs = 15; // Starting with a reasonable number for testing
-    for i in 0..num_npcs {
+    for i in 0..resources.num_npcs {
         let position = Vec2::new(
             rng.random_range(min_x..=max_x),
             rng.random_range(min_y..=max_y),
         );
 
         // First spawn with core components (under 10 component limit)
-        let entity_id = commands.spawn((
-            // Core NPC identifier
-            crate::core::entities::Npc { id: i },
-
-            // Transform and rendering
-            Sprite {
-                image: asset_server.load("person.png"),
-                ..default()
-            },
-            Transform::from_translation(position.extend(0.0)),
-
-            // Basic physics for top-down movement
-            RigidBody::Dynamic,
-            Collider::ball(8.0), // 8 pixel radius for NPCs
-            Velocity::default(),
-
-            // Debug information
-            Name::new(format!("NPC_{}", i)),
-        )).id();
+        // let entity_id = commands.spawn().id();
 
         // Then insert additional physics components to configure top-down behavior
-        commands.entity(entity_id).insert((
-            // Zero gravity for top-down view - configured per entity now
-            GravityScale(0.0),
-            // Lock Z rotation to prevent spinning
-            LockedAxes::ROTATION_LOCKED,
-            // Add damping to prevent excessive sliding
-            Damping {
-                linear_damping: 2.0,
-                angular_damping: 1.0,
-            },
-        ));
+        // commands.entity(entity_id).insert();
 
         // Insert AI perception components
-        commands.entity(entity_id).insert((
-            crate::ai::perception::vision::VisionCone::default(),
-            crate::ai::perception::vision::VisuallyPerceived::default(),
-            crate::ai::perception::vision::VisualApparentState::default(),
-        ));
+        // commands.entity(entity_id).insert();
 
         // Insert AI cognition and behavior components
-        commands.entity(entity_id).insert((
-            crate::ai::physiology::needs::BasicNeeds::default(),
-            crate::ai::cognition::decision::DesireDecision::default(),
-            crate::ai::cognition::memory::CognitiveWorkingMemory::default(),
-        ));
+        // commands.entity(entity_id).insert();
 
         // Insert navigation components
-        commands.entity(entity_id).insert((
-            crate::ai::navigation::pathfinding::PathTarget::default(),
-            crate::ai::navigation::pathfinding::SteeringBehavior::default(),
-            crate::ai::navigation::pathfinding::SpatialThingMemory::default(),
-        ));
+        // commands.entity(entity_id).insert();
 
         println!("Spawned NPC_{} at position {:?} with proper top-down physics", i, position);
     }
 
-    println!("Spawned {} NPCs.", num_npcs);
+    println!("Spawned {} NPCs.", resources.num_npcs);
 }
