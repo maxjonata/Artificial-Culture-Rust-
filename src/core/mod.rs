@@ -1,5 +1,5 @@
 pub mod constants;
-mod entities;
+pub mod entities;
 mod spawning;
 
 use bevy::prelude::*;
@@ -12,9 +12,11 @@ use bevy::prelude::*;
 pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
-    fn build(&self, _app: &mut App) {
-        _app
-            .register_type::<entities::Npc>()
+    fn build(&self, app: &mut App) {
+        // Auto-register all debug types (components and resources)
+        crate::utils::macros::register_all_debug_types(app);
+
+        app
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
     }

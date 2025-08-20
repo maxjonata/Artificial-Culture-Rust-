@@ -24,13 +24,7 @@ use bevy::prelude::*;
 pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
-    fn build(&self, _app: &mut App) {
+    fn build(&self, app: &mut App) {
         // TODO: Add domain-specific AI plugins as they are implemented
-        // _app.add_plugins((
-        //     CognitionPlugin,
-        //     PhysiologyPlugin,
-        //     PerceptionPlugin,
-        //     SocialPlugin,
-        // ));
     }
 }

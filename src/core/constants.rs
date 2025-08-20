@@ -17,7 +17,7 @@ use bevy::prelude::*;
 /// This resource provides a centralized location for all constants used
 /// throughout the simulation, enabling easy tuning and scientific validation
 /// of simulation parameters.
-#[derive(Resource, Debug, Reflect, Default)]
+#[derive(Resource, Debug, Reflect)]
 #[reflect(Resource)]
 pub struct GameConstants {
     /// Maximum number of NPCs that can exist simultaneously
@@ -26,12 +26,12 @@ pub struct GameConstants {
     pub time_step: f32,
 }
 
-impl GameConstants {
+impl Default for GameConstants {
     /// Creates a new GameConstants resource with scientifically-grounded defaults.
     ///
     /// Default values are based on computational feasibility and references
     /// from cognitive science literature in the project documentation.
-    pub fn new() -> Self {
+    fn default() -> Self {
         Self {
             num_npcs: 1, // Reasonable limit for real-time simulation
             time_step: 1.0 / 60.0, // 60 FPS target

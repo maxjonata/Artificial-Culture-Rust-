@@ -3,9 +3,11 @@ mod ai;
 mod core;
 mod world;
 mod presentation;
+mod utils;
+
+use bevy::prelude::*;
 
 use ai::AiPlugin;
-use bevy::prelude::*;
 use core::CorePlugin;
 use presentation::PresentationPlugin;
 use world::WorldPlugin;
