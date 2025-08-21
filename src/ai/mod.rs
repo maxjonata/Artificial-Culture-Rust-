@@ -14,6 +14,11 @@
 //!
 //! Each domain implements the Plugin pattern for modular integration.
 
+mod cognition;
+mod perception;
+mod physiology;
+mod social;
+
 use bevy::prelude::*;
 
 /// Main AI plugin that orchestrates all artificial intelligence systems.
@@ -25,6 +30,12 @@ pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut App) {
-        // TODO: Add domain-specific AI plugins as they are implemented
+        app
+            .add_plugins((
+                cognition::AiCognitionPlugin,
+                perception::AiPerceptionPlugin,
+                physiology::AiPhysiologyPlugin,
+                social::AiSocialPlugin,
+            ));
     }
 }
