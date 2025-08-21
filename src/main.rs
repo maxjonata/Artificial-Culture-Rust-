@@ -5,6 +5,9 @@ mod world;
 mod presentation;
 mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use bevy::prelude::*;
 
 use ai::AiPlugin;

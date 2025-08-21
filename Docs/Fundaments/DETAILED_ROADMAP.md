@@ -31,8 +31,8 @@ smallest possible types for performance.
     - ✅ `clamped_setters!` macro (already implemented)
     - ✅ `register_types!` macro (already implemented)
     - [ ] **Add validation macros for 0.0-1.0 range enforcement**
-        - [ ] Create `validate_normalized!` macro in `src/utils/macros/`
-        - [ ] Create `assert_range!` macro for debug builds
+        - [ ] Create `validate_normalized!` check util in `src/utils/macros/`
+        - [ ] Create `assert_range!` check util for debug builds
         - [ ] Add runtime validation for release builds
         - [ ] Implement `NormalizedValue<T>` wrapper type
         - [ ] Add conversion utilities between `u8` and `f32`

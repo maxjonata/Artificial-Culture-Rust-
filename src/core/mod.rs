@@ -18,7 +18,8 @@ impl Plugin for CorePlugin {
         app
             .register_types::<(
                 constants::GameConstants,
-                entities::Npc
+                entities::Npc,
+                types::Normalized
             )>()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
