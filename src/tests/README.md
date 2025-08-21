@@ -1,3 +1,13 @@
+# ⚠️ CURRENT IMPLEMENTATION - ALIGNED WITH MAIN SPECIFICATION
+
+**Status**: This document provides current test organization guidance and is aligned with the main specification.
+
+**For Current Development**: This guide supports the **Primary Documentation Sources**:
+- `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+- `Docs/Fundaments/DETAILED_ROADMAP.md`
+
+---
+
 # Test Organization
 
 This directory contains all tests for the Artificial Society simulation, organized by domain to match the main codebase structure.

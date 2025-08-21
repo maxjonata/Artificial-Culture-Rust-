@@ -18,9 +18,11 @@ Believable AI-driven social simulation in Rust / Bevy – emergent minds through
 - Goal: Emergent, socially believable NPC dynamics via lossy information + biased inference (not scripted trees).
 - Core Cognitive Loop: Physiology ➜ Expression ➜ Distorted Perception ➜ Biased Belief Update ➜ Desire/Intent ➜ Action.
 - Information Rule: Agents never read another agent's ground‑truth internals; only their own perceived/derived model.
-- Data Shape: Continuous numeric component fields (dense observation space; minimal enums) for future ML integration.
-- ECS Style: Feature (domain) modularization + event-driven systems (`Entity` IDs in events; fresh lookup via
+- Data Shape: Type-safe `Normalized` values for all [0.0, 1.0] ranges; continuous numeric fields for ML integration.
+- ECS Style: Domain-based plugin architecture + event-driven systems (`Entity` IDs in events; fresh lookup via
   `query.get`).
+- Type Safety: Zero-cost `Normalized` wrapper prevents invalid states while maintaining f32 performance.
+- Test Organization: Comprehensive test suite in `src/tests/` organized by domain.
 - Simulation Scaling Vision: Many headless Bevy zone workers + SpaceTimeDB persistence layer (later stage).
 - ML Readiness: Observation vectors = flattened component sets; hooks at desire arbitration, action selection, belief
   reinforcement.
@@ -57,31 +59,37 @@ intuition when facing AI agents—occasionally feeling uncertainty about whether
 Believability emerges not from perfect cognition but from *structured imperfection*: limited perception, biased
 updating, noisy expression, and asymmetric information propagation.
 
-This repository is the early foundational prototype in active refactor toward a four-layer communication & cognition
-pipeline. Legacy/placeholder systems are being migrated to strict domain plugins and event pathways.
+This repository implements the foundational architecture with a type-safe `Normalized` wrapper system, comprehensive
+domain-based plugin architecture, and organized test structure. The four-layer communication pipeline is being
+built on this solid foundation with strict separation between current and historical approaches.
 
 ---
 
 ## Foundational Principles
 
-1. Mantle of Ignorance: No omniscience; perception components are the only ingress of external world data.
-2. Neuro-Inspired Data: Memory & knowledge modeled as weighted relations (planned) rather than opaque blobs.
-3. Event-Driven Reactivity: Prefer events over polling (neuron metaphor; cache-friendly targeted lookups).
-4. Equality of Potential: Identical cognitive substrate across all agents; divergence via learned/experienced weights &
-   state histories.
-5. Data-Oriented Design: Flat numeric fields; minimized branching; small types where feasible.
-6. Continuous Social State: Emotions/attitudes/intent projected as continuous vectors, not enumerated categories.
-7. Scientific Grounding (Iterative): Parameters documented with source rationale once stabilized.
+1. **Mantle of Ignorance**: No omniscience; perception components are the only ingress of external world data.
+2. **Type Safety**: `Normalized` wrapper enforces [0.0, 1.0] bounds at compile-time, preventing invalid states.
+3. **Event-Driven Reactivity**: Prefer events over polling (neuron metaphor; cache-friendly targeted lookups).
+4. **Domain Plugin Architecture**: Each AI domain (cognition, perception, physiology, social) is a self-contained plugin.
+5. **Equality of Potential**: Identical cognitive substrate across all agents; divergence via learned/experienced weights.
+6. **Data-Oriented Design**: Type-safe numeric fields; minimized branching; zero-cost abstractions.
+7. **Continuous Social State**: Emotions/attitudes/intent as continuous `Normalized` vectors, not enums.
+8. **Test-Driven Development**: Comprehensive test suite in `src/tests/` organized by domain.
+9. **Documentation Hierarchy**: Clear separation between current specification and historical approaches.
 
 ---
 
 ## Current Milestone Focus
 
-Active work spans Milestone 1 (Expressive Agent) closing and Milestone 2 (Subjective Observer) initiation:
+**Foundation Phase Complete**: Type-safe architecture with `Normalized` wrapper system and comprehensive plugin structure.
 
-- Map physiological + internal modulators ➜ outward expression vector.
-- Implement attention-weighted, noisy perception producing biased salience & partial internal reconstruction.
-- Establish belief accumulation scaffolding (confirmation bias & retention weighting forthcoming).
+**Current Focus**: Milestone 1 (Expressive Agent) implementation:
+
+- ✅ **Type-Safe Foundation**: `Normalized` wrapper prevents invalid states, replaces manual validation
+- ✅ **Plugin Architecture**: Domain-based plugins (cognition, perception, physiology, social) with comprehensive documentation
+- ✅ **Test Infrastructure**: Organized test suite in `src/tests/` with 12 passing tests
+- 🔄 **Expression Mapping**: Map physiological + internal modulators ➜ outward expression vector
+- 🔄 **Perception Pipeline**: Implement attention-weighted, noisy perception with biased reconstruction
 
 ---
 
@@ -106,56 +114,41 @@ Emergent outcomes: miscommunication loops, reputation drift, emotional contagion
 ```
 Cargo.toml
 src/
-  main.rs
+  main.rs                    # Plugin aggregator
   ai/
-    mod.rs
-    cognition/
-      mod.rs
-      decision.rs
-      desires.rs
-      inference.rs
-      knowledge.rs
-      memory.rs
-      personality.rs
-    navigation/
-      mod.rs
-      learning.rs
-      mapping.rs
-      pathfinding.rs
-    perception/
-      mod.rs
-      attention.rs
-      vision.rs
-    physiology/
-      mod.rs
-      needs.rs
-      states.rs
-      systems.rs
-    social/
-      mod.rs
-      interaction.rs
-      reputation.rs
-      systems.rs
+    mod.rs                   # AiPlugin - orchestrates all AI systems
+    cognition/mod.rs         # AiCognitionPlugin - decision making, memory, beliefs
+    perception/mod.rs        # AiPerceptionPlugin - sensory processing, world model
+    physiology/mod.rs        # AiPhysiologyPlugin - needs, stress, homeostasis
+    social/mod.rs            # AiSocialPlugin - communication, relationships
   core/
-    mod.rs
-    constants.rs
-    entities.rs
-    spawning.rs
-    utils.rs
+    mod.rs                   # CorePlugin - foundational systems
+    constants.rs             # GameConstants with Normalized values
+    entities.rs              # Entity markers and classifications
+    types.rs                 # Normalized type and utilities
+    spawning.rs              # Entity creation systems
   presentation/
-    mod.rs
-    fps_display.rs
-    vision_debug.rs
+    mod.rs                   # PresentationPlugin (planned)
+    fps_display.rs           # Debug overlays
   utils/
-    mod.rs
-    helpers/
-    macros/
+    mod.rs                   # Utility aggregation
+    helpers/                 # Generic helper modules
+    macros/                  # Type registration macros (clamped_setters removed)
   world/
-    mod.rs
+    mod.rs                   # WorldPlugin (planned)
+  tests/                     # ✅ NEW: Organized test structure
+    mod.rs                   # Test module declarations
+    core/
+      mod.rs                 # Core module tests
+      types.rs               # Normalized type tests (12 tests passing)
 Docs/
-  Fundaments/... (primary specs & theory)
-  Structures/... (components/systems overviews)
-  Flows/... (interaction & roadmap drafts)
+  Fundaments/              # ✅ PRIMARY SOURCES (authoritative)
+    Artificial Society_... # Main specification
+    DETAILED_ROADMAP.md    # Implementation roadmap
+  Structures/              # ⚠️ HISTORICAL (reference only)
+  Flows/                   # ⚠️ HISTORICAL (reference only)
+  Papers/                  # ✅ RESEARCH SOURCES (parameter values)
+  normalized_type_guide.md # ✅ CURRENT implementation guide
 ```
 
 ---
@@ -164,57 +157,46 @@ Docs/
 
 ### Entry Layer
 
-- [src/main.rs](src/main.rs): Application bootstrap; composes domain + presentation plugins (some still TODO).
-- [src/ai/mod.rs](src/ai/mod.rs): Domain namespace root; central re-export point.
+- [src/main.rs](src/main.rs): Application bootstrap; composes domain plugins with clean plugin architecture.
+- [src/ai/mod.rs](src/ai/mod.rs): `AiPlugin` - orchestrates all AI subsystems (cognition, perception, physiology, social).
 
 ### Cognition
 
-- [cognition/mod.rs](src/ai/cognition/mod.rs): (Will finalize `CognitionPlugin`) exports internal cognition subsystems.
-- [decision.rs](src/ai/cognition/decision.rs): Intent/action arbitration scaffolding (future utility scoring & ML action
-  hook site).
-- [desires.rs](src/ai/cognition/desires.rs): Desire generation seeds (will emit desire events).
-- [inference.rs](src/ai/cognition/inference.rs): Placeholder for social intent inference Layer 4.
-- [knowledge.rs](src/ai/cognition/knowledge.rs): Subjective knowledge graph structures (agent-centric indices planned).
-- [memory.rs](src/ai/cognition/memory.rs): Working / episodic memory abstractions (decay + consolidation to come).
-- [personality.rs](src/ai/cognition/personality.rs): Continuous trait vectors modulating thresholds & rates.
-
-### Navigation
-
-- [navigation/mod.rs](src/ai/navigation/mod.rs): (Planned `NavigationPlugin`).
-- [learning.rs](src/ai/navigation/learning.rs): Reinforcement placeholders for route selection.
-- [mapping.rs](src/ai/navigation/mapping.rs): Spatial familiarity & occupancy representation (future heuristic
-  weighting).
-- [pathfinding.rs](src/ai/navigation/pathfinding.rs): Path acquisition utilities (future navmesh / Rapier queries).
+- [cognition/mod.rs](src/ai/cognition/mod.rs): `AiCognitionPlugin` - executive functions, decision-making, memory systems.
+  - **Architecture**: Dual-process theory, working memory model, Bayesian belief updating
+  - **Components**: WorkingMemory, LongTermMemory, BeliefSystem, DecisionMaker, GoalPlanner
+  - **Integration**: Receives perception input, considers physiological drives, outputs behavioral decisions
 
 ### Perception
 
-- [perception/mod.rs](src/ai/perception/mod.rs): (Upcoming `PerceptionPlugin`). Registers sensory + attention systems.
-- [attention.rs](src/ai/perception/attention.rs): Selective attention component set; salience weighting & capacity
-  management.
-- [vision.rs](src/ai/perception/vision.rs): Visual acquisition stub (range tests + future LOS occlusion & noise
-  injection).
+- [perception/mod.rs](src/ai/perception/mod.rs): `AiPerceptionPlugin` - sensory processing and world model construction.
+  - **Architecture**: Hierarchical predictive processing, Bayesian perception, attention filtering
+  - **Components**: VisionSystem, HearingSystem, WorldModel, AttentionFilter, PerceptualMemory
+  - **Mantle of Ignorance**: Enforces information scarcity - agents only access world through sensory channels
 
 ### Physiology
 
-- [physiology/mod.rs](src/ai/physiology/mod.rs): (Upcoming `PhysiologyPlugin`). Needs & internal drive systems.
-- [needs.rs](src/ai/physiology/needs.rs): Core drive metrics (hunger/energy/social safety etc.).
-- [states.rs](src/ai/physiology/states.rs): Transitional stress / arousal state markers (may become continuous
-  classification).
-- [systems.rs](src/ai/physiology/systems.rs): Decay & threshold event emission (refactor toward event-driven updates).
+- [physiology/mod.rs](src/ai/physiology/mod.rs): `AiPhysiologyPlugin` - biological drives and homeostatic regulation.
+  - **Architecture**: Allostatic load model, circadian rhythms, stress response systems
+  - **Components**: BasicNeeds, StressSystem, HealthStatus, CircadianClock, Metabolism
+  - **Integration**: Provides motivational drives, affects perception through stress, generates emotional responses
 
 ### Social
 
-- [social/mod.rs](src/ai/social/mod.rs): (Upcoming `SocialPlugin`). Expression + interaction scheduling.
-- [interaction.rs](src/ai/social/interaction.rs): Legacy interaction triggers (to generalize into event-based pipeline).
-- [reputation.rs](src/ai/social/reputation.rs): Reputation / trust axis accumulation (continuous score basis).
-- [systems.rs](src/ai/social/systems.rs): Social state update routines (target: expression ➜ perception events).
+- [social/mod.rs](src/ai/social/mod.rs): `AiSocialPlugin` - interpersonal relationships and communication.
+  - **Architecture**: Social Identity Theory, Theory of Mind, Dunbar's number constraints
+  - **Components**: SocialCognition, RelationshipTracker, CommunicationSystem, GroupMembership
+  - **Emergent Phenomena**: Social networks, cultural evolution, collective intelligence, status hierarchies
+
+
 
 ### Core (Cross-Domain Infrastructure)
 
-- [core/mod.rs](src/core/mod.rs): Core exports.
-- [constants.rs](src/core/constants.rs): Central tuning parameters (to receive documented justifications).
+- [core/mod.rs](src/core/mod.rs): `CorePlugin` - foundational systems and type registration.
+- [types.rs](src/core/types.rs): **NEW** - `Normalized` type-safe wrapper with comprehensive arithmetic operations.
+- [constants.rs](src/core/constants.rs): `GameConstants` with type-safe `Normalized` values.
 - [entities.rs](src/core/entities.rs): Shared marker & classification components (type tags for queries).
-- [spawning.rs](src/core/spawning.rs): Runtime entity spawning (to migrate into type‑state builders later).
+- [spawning.rs](src/core/spawning.rs): Runtime entity spawning systems.
 
 ### Presentation / Debug (Non-AI Logic)
 
@@ -225,19 +207,28 @@ Docs/
 
 - [utils/mod.rs](src/utils/mod.rs): Aggregated helper exports.
 - [utils/helpers](src/utils/helpers): Directory containing generic helper modules.
-- [utils/macros](src/utils/macros): Macro definitions improving ergonomics.
+- [utils/macros](src/utils/macros): Type registration macros (deprecated `clamped_setters!` removed).
+
+### Tests (NEW)
+
+- [tests/mod.rs](src/tests/mod.rs): Test module organization by domain.
+- [tests/core/types.rs](src/tests/core/types.rs): Comprehensive `Normalized` type tests (12 tests passing).
 
 ### World Assembly
 
 - [world/mod.rs](src/world/mod.rs): Spatial/world scaffolding (future resource nodes & zone partition registration).
 
-### Documentation (Selected)
+### Documentation (Updated Hierarchy)
 
-- [Complete Technical & Philosophical Spec](Docs/Fundaments/Artificial%20Society_%20Complete%20Technical%20and%20Philosophical%20Specification.md)
-- [Components Catalog](Docs/Structures/components.md)
-- [Systems Overview](Docs/Structures/systems.md)
-- [Interaction Flows](Docs/Flows/interaction_flows.md)
-- [Roadmap Narrative](Docs/Fundaments/DETAILED_ROADMAP.md)
+**✅ CURRENT (Authoritative):**
+- [Main Specification](Docs/Fundaments/Artificial%20Society_%20Complete%20Technical%20and%20Philosophical%20Specification.md)
+- [Implementation Roadmap](Docs/Fundaments/DETAILED_ROADMAP.md)
+- [Normalized Type Guide](docs/normalized_type_guide.md)
+
+**⚠️ HISTORICAL (Reference Only):**
+- [Components Catalog](Docs/Structures/components.md) - Historical ECS design
+- [Systems Overview](Docs/Structures/systems.md) - Legacy system architecture
+- [Interaction Flows](Docs/Flows/interaction_flows.md) - Early flow planning
 
 ---
 
@@ -245,7 +236,8 @@ Docs/
 
 | Milestone                  | Focus                                  | Proof Artifact                                       | Status      |
 |----------------------------|----------------------------------------|------------------------------------------------------|-------------|
-| 1 Expressive Agent         | Internal ➜ outward expression mapping  | Physiological gradients modulate expression vector   | In Progress |
+| **Foundation**             | **Type-safe architecture & plugins**  | **Normalized wrapper + comprehensive tests**         | **✅ Complete** |
+| 1 Expressive Agent         | Internal ➜ outward expression mapping  | Physiological gradients modulate expression vector   | 🔄 In Progress |
 | 2 Subjective Observer      | Distorted perception + biased beliefs  | Agent misinterprets another, drives altered response | Pending     |
 | 3 Persistent Social Memory | Relationship drift + confirmation bias | Early misread persists & shapes future               | Planned     |
 | 4 Goal-Oriented Behavior   | Utility / multi-step strategy          | Sequenced intent generation & execution              | Future      |
@@ -259,21 +251,63 @@ Detailed acceptance criteria: see spec sections on milestones.
 
 ## Prototype Features
 
-Implemented / Partial:
+**✅ Foundation Complete:**
 
-- Bevy ECS foundation (0.16.1) + dynamic linking.
-- Agent spawning & rudimentary movement.
-- Early perception & social interaction scaffolds (legacy rumor structure).
-- Inspector-driven live tuning (`bevy_inspector_egui`).
+- **Type-Safe Architecture**: `Normalized` wrapper prevents invalid states (12 comprehensive tests)
+- **Plugin System**: Domain-based plugins (cognition, perception, physiology, social) with comprehensive documentation
+- **Test Infrastructure**: Organized test suite in `src/tests/` with clear domain separation
+- **Documentation Hierarchy**: Clear separation between current specification and historical approaches
+- Bevy ECS foundation (0.16.1) + dynamic linking
+- Agent spawning & rudimentary movement
+- Inspector-driven live tuning (`bevy_inspector_egui`)
 
-Near-Term (Active Refactor):
+**🔄 Current Development:**
 
-- Domain plugins with isolated registration & type reflection.
-- Expression ➜ perception distortion path.
-- Belief accumulation with confirmation bias weighting.
-- Attention capacity limits & salience emission events.
+- Expression ➜ perception distortion pipeline implementation
+- Physiological needs integration with `Normalized` values
+- Event-driven system architecture refinement
 
-Later: Reputation modeling, cultural drift, ML observation export, SpaceTimeDB integration.
+**🔮 Future Development:**
+- Reputation modeling with `Normalized` trust values
+- Cultural drift through social learning
+- ML observation export with type-safe vectors
+- SpaceTimeDB integration for persistence
+
+---
+
+## Type-Safe Architecture Highlights
+
+### `Normalized` Wrapper System
+
+The project now uses a comprehensive type-safe `Normalized` wrapper for all [0.0, 1.0] values:
+
+```rust
+// OLD: Manual validation prone to errors
+pub struct Needs {
+    pub hunger: f32,  // Could be set to invalid values
+}
+needs.hunger = 2.0;  // Compiles but invalid!
+
+// NEW: Type-safe with automatic bounds enforcement
+pub struct Needs {
+    pub hunger: Normalized,  // Cannot store invalid values
+}
+needs.hunger += 2.0;  // Automatically clamped to 1.0
+```
+
+**Benefits:**
+- **Zero-cost abstraction**: Same memory layout as f32
+- **Compile-time safety**: Invalid states are impossible
+- **Automatic clamping**: All arithmetic operations maintain bounds
+- **Bevy integration**: Full Component and Reflect support
+- **Comprehensive tests**: 12 tests covering all operations
+
+### Removed Deprecated Code
+
+- ❌ **`clamped_setters!` macro**: Replaced by type-safe `Normalized` fields
+- ❌ **Manual validation utilities**: `quantized_to_float`, `float_to_quantized` (now type methods)
+- ❌ **Legacy utility functions**: Replaced by `Normalized` arithmetic operations
+- ✅ **Kept validation macros**: For testing and external input validation
 
 ---
 
@@ -306,29 +340,35 @@ Quick Notes:
 
 ## Documentation Map
 
-Primary Spec:
+**⚠️ IMPORTANT: Documentation Hierarchy**
 
-- Full Design & Theory: `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+**PRIMARY SOURCES (Authoritative for Current Development):**
+- **Main Specification**: `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+- **Implementation Roadmap**: `Docs/Fundaments/DETAILED_ROADMAP.md`
+- **Game Design Document**: Based on the above two files (when created)
 
-Supporting:
+**RESEARCH SOURCES (For Parameter Values & Design Inspiration):**
+- **Academic Papers**: `Docs/Papers/` - Use for realistic parameter values and behavioral patterns, NOT for achieving scientific perfection
 
-- ECS Structures: `Docs/Structures/`
-- Flows & Roadmap: `Docs/Flows/`
-- Theoretical Grounding: `Docs/Fundaments/neurological.md`, `psychological.md`, `sociological.md`
-- Source Papers: `Docs/Papers/` (citations for parameter justification)
+**HISTORICAL/BACKSTORY DOCUMENTATION (Reference Only - Not for Current Development):**
+- ECS Structures: `Docs/Structures/` - **Historical approaches, superseded by main specification**
+- Flows & Roadmap: `Docs/Flows/` - **Legacy planning documents, superseded by main specification**
+- Theoretical Grounding: `Docs/Fundaments/neurological.md`, `psychological.md`, `sociological.md` - **Historical research notes**
 
-Some files are marked UNFINISHED intentionally; iterative hardening is expected.
+**⚠️ AI Development Notice**: AI assistants should ONLY use the Primary Sources for current development guidance. All other documentation represents historical approaches and lessons learned, preserved for reference but not for active development.
 
 ---
 
 ## Design Invariants
 
-- No direct access to another agent's internal ground-truth state.
-- Events carry only identifiers / minimal scalar payload; receivers fetch authoritative state at handling time.
-- Components are pure data containers (`#[derive(Component, Debug, Reflect, Default)]`).
-- All socially meaningful constructs trend toward continuous, parametric representations.
-- Constants must migrate toward documented, literature-backed justification.
-- Systems remain single-responsibility and side-effect bounded to enable parallel scheduling.
+- **Type Safety**: All [0.0, 1.0] values use `Normalized` wrapper to prevent invalid states at compile-time.
+- **Mantle of Ignorance**: No direct access to another agent's internal ground-truth state.
+- **Event-Driven**: Events carry only identifiers; receivers fetch authoritative state at handling time.
+- **Pure Components**: Components are data containers (`#[derive(Component, Debug, Reflect, Default)]`).
+- **Continuous Representation**: Social/emotional constructs as `Normalized` vectors, not enums.
+- **Domain Plugins**: Each AI domain (cognition, perception, physiology, social) is self-contained.
+- **Test Coverage**: All core functionality has comprehensive tests in `src/tests/`.
+- **Documentation Hierarchy**: Clear separation between current specification and historical approaches.
 
 ---
 
@@ -343,13 +383,15 @@ Some files are marked UNFINISHED intentionally; iterative hardening is expected.
 
 ## Contributing Guidelines
 
-Early-phase but aiming for architectural consistency:
+Foundation established with architectural consistency:
 
-- Prefer generalized abstractions (avoid one-off duplicated patterns).
-- Use events for inter-domain communication instead of direct cross-query coupling.
-- Document any new constant with rationale & (ideally) citation.
-- Avoid adding categorical enums for social/emotional states—favor floats/vectors.
-- Keep systems small (< ~50 LOC of logic) and clearly named with `_system` suffix when executed by scheduler.
+- **Type Safety First**: Use `Normalized` for all [0.0, 1.0] values instead of raw f32.
+- **Plugin Architecture**: Each domain is a self-contained plugin with comprehensive documentation.
+- **Test-Driven**: All new functionality requires tests in `src/tests/` organized by domain.
+- **Event-Driven**: Use events for inter-domain communication instead of direct coupling.
+- **Continuous Values**: Use `Normalized` vectors for social/emotional states, not enums.
+- **Documentation**: Follow the established hierarchy (current vs. historical approaches).
+- **Small Systems**: Keep systems focused (< ~50 LOC) with clear `_system` suffix naming.
 
 Draft PRs encouraged for architectural discussion before large changes.
 
@@ -371,18 +413,21 @@ for alignment with project philosophy & data-oriented constraints.
 
 ## Status Snapshot
 
-Early foundation refactor: migrating toward expression + subjective perception layers, domain plugin encapsulation, and
-event-driven cognition pipeline. Expect experimental APIs & rapid change.
+**Foundation Phase Complete**: Type-safe `Normalized` wrapper system, comprehensive domain plugin architecture, and
+organized test infrastructure established. Building expression + subjective perception layers on this solid foundation.
+Current focus: implementing physiological expression mapping with type-safe values.
 
 ---
 
 ## Immediate Next Steps
 
-1. Finalize `Needs` ➜ expression modulation mapping (Milestone 1 closure).
-2. Implement attention-based perceptual filtering + distortion injection (kickoff Milestone 2).
-3. Generalize legacy rumor logic into unified social communication events.
-4. Introduce domain plugin structs with registration & reflection for all existing modules.
-5. Add debug overlay tracing expression ➜ perception ➜ belief transitions.
+1. **✅ COMPLETE**: Type-safe `Normalized` wrapper with comprehensive tests (12 tests passing)
+2. **✅ COMPLETE**: Domain plugin architecture with comprehensive documentation
+3. **✅ COMPLETE**: Test infrastructure organized in `src/tests/` by domain
+4. **✅ COMPLETE**: Documentation hierarchy with clear current vs. historical separation
+5. **🔄 IN PROGRESS**: Implement `Needs` ➜ expression modulation mapping using `Normalized` values
+6. **NEXT**: Attention-based perceptual filtering + distortion injection (Milestone 2 kickoff)
+7. **PLANNED**: Generalize legacy rumor logic into unified social communication events
 
 ---
 

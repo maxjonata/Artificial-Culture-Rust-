@@ -1,3 +1,13 @@
+# ⚠️ IMPLEMENTATION GUIDE - CURRENT DEVELOPMENT
+
+**Status**: This document provides current implementation guidance for the `Normalized` type system and is aligned with the main specification.
+
+**For Current Development**: This guide supports the **Primary Documentation Sources**:
+- `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+- `Docs/Fundaments/DETAILED_ROADMAP.md`
+
+---
+
 # Type-Safe Normalized Values Guide
 
 ## Overview

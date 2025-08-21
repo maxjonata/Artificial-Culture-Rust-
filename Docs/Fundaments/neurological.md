@@ -1,3 +1,17 @@
+# ⚠️ HISTORICAL/BACKSTORY DOCUMENTATION - NOT FOR CURRENT DEVELOPMENT
+
+**Status**: This document represents historical research notes and early theoretical exploration. It is preserved for reference and learning from past approaches but is **superseded by the main specification**.
+
+**For Current Development**: Use only the **Primary Documentation Sources**:
+- `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+- `Docs/Fundaments/DETAILED_ROADMAP.md`
+
+**Research Use**: This document may be referenced for understanding the scientific background, but the main specification contains the refined approach based on lessons learned.
+
+**AI Development Notice**: AI assistants should NOT use this document for current development guidance.
+
+---
+
 # Neurological Foundations for Social Simulation
 
 ## Neural Bases of Social Behavior

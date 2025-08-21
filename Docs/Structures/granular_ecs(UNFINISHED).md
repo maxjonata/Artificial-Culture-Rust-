@@ -1,3 +1,15 @@
+# ⚠️ HISTORICAL/BACKSTORY DOCUMENTATION - NOT FOR CURRENT DEVELOPMENT
+
+**Status**: This document represents historical approaches and early design exploration. It is preserved for reference and learning from past approaches but is **superseded by the main specification**.
+
+**For Current Development**: Use only the **Primary Documentation Sources**:
+- `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
+- `Docs/Fundaments/DETAILED_ROADMAP.md`
+
+**AI Development Notice**: AI assistants should NOT use this document for current development guidance.
+
+---
+
 # Granular Structure of Entities, Components, and Systems for Deterministic Social Simulation
 
 ## 1. Entities (Agents and World Elements)
