@@ -27,16 +27,19 @@ smallest possible types for performance.
       pub type QuantizedWeight = u8;   // 0-255 → 0.0-1.0
       ```
 
-- [ ] **Complete macro utilities** (25% of Phase 1)
-    - ✅ `clamped_setters!` macro (already implemented)
+- [x] **Complete macro utilities** (25% of Phase 1)
+    - ~~✅ `clamped_setters!` macro (already implemented)~~
+        - **Changed for the preferred typesafe "Normalized"**
     - ✅ `register_types!` macro (already implemented)
-    - [ ] **Add validation macros for 0.0-1.0 range enforcement**
-        - [ ] Create `validate_normalized!` check util in `src/utils/macros/`
-        - [ ] Create `assert_range!` check util for debug builds
-        - [ ] Add runtime validation for release builds
-        - [ ] Implement `NormalizedValue<T>` wrapper type
-        - [ ] Add conversion utilities between `u8` and `f32`
-
+    - [x] **Add validation macros for 0.0-1.0 range enforcement**``
+        - [x] ~~Create `validate_normalized` check util in `src/utils/macros/`~~
+          - [x] **Instead it was created a normalized typesafe**
+        - [x] Create `assert_range` check util for debug builds
+        - [x] Add runtime validation for release builds
+        - [x] ~~Implement `NormalizedValue<T>` wrapper type~~
+          - [x] **Improved with safe type "Normalized"**
+        - [x] Add conversion utilities between `u8` and `f32`
+    
 - [ ] **Basic ECS plugin structure** (50% of Phase 1)
     - [ ] **Create foundation plugin architecture**
         - [ ] Create `src/ai/mod.rs` with base plugin traits
