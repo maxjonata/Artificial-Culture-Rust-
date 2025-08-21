@@ -153,7 +153,7 @@ each agent, and vice-versa.
     - Components are simple data containers. **NO LOGIC IN COMPONENTS.**
     - When creating a new Component, **ALWAYS** add these derives:
       ```rust
-      #[derive(Component, Debug, Reflect, Default)]
+      #[derive(Component, Reflect, Debug, Default)]
       #[reflect(Component)] 
       ```
 - **System Naming:** Name systems clearly, ending with `_system`. Example: `pub fn desire_generation_system(...)`.
@@ -186,7 +186,7 @@ at `src/entity_builders/generic_type_safe_builder.rs`.**
           // This decay rate is a starting point based on the metabolic models
           // discussed in Sterling (2012), representing a simplified energy expenditure.
           // See: /docs/sterling_2012_allostasis.pdf
-          const HUNGER_DECAY_RATE: f32 = 0.5; 
+          const hunger_decay_rate: f32 = 0.5; 
           // ...
       }
       ```

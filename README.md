@@ -237,7 +237,7 @@ Docs/
 - [Components Catalog](Docs/Structures/components.md)
 - [Systems Overview](Docs/Structures/systems.md)
 - [Interaction Flows](Docs/Flows/interaction_flows.md)
-- [Roadmap Narrative](Docs/Flows/roadmap.md)
+- [Roadmap Narrative](Docs/Fundaments/DETAILED_ROADMAP.md)
 
 ---
 

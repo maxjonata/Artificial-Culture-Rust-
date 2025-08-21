@@ -22,11 +22,5 @@ use bevy::prelude::*;
 pub struct UtilsPlugin;
 
 impl Plugin for UtilsPlugin {
-    fn build(&self, _app: &mut App) {
-        // TODO: Add utility systems as needed
-        // _app.add_systems(Update, (
-        //     performance_monitoring_system,
-        //     memory_optimization_system,
-        // ));
-    }
+    fn build(&self, app: &mut App) {}
 }

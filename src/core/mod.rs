@@ -1,7 +1,9 @@
 pub mod constants;
 pub mod entities;
+pub mod types;
 mod spawning;
 
+use crate::utils::helpers::AppRegisterTypesExt;
 use bevy::prelude::*;
 
 /// Skeleton core infrastructure plugin (reset state)
@@ -13,10 +15,11 @@ pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
-        // Auto-register all debug types (components and resources)
-        crate::utils::macros::register_all_debug_types(app);
-
         app
+            .register_types::<(
+                constants::GameConstants,
+                entities::Npc
+            )>()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
     }
