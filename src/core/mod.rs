@@ -19,9 +19,12 @@ impl Plugin for CorePlugin {
             .register_types::<(
                 constants::GameConstants,
                 entities::Npc,
-                types::Normalized
+                types::Normalized,
+                types::QuantizedWeight,
+                types::AgentId
             )>()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
     }
 }
+

@@ -1,3 +1,5 @@
+pub mod types;
+
 use bevy::prelude::App;
 
 /// Trait implemented for tuples of types that should be registered for reflection.
