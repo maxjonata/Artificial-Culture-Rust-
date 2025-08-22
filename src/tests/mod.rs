@@ -4,3 +4,4 @@
 //! as the main codebase for easy navigation and maintenance.
 
 pub mod core;
+pub mod utils;
