@@ -33,25 +33,25 @@ smallest possible types for performance.
     - ✅ `register_types!` macro (already implemented)
     - [x] **Add validation macros for 0.0-1.0 range enforcement**``
         - [x] ~~Create `validate_normalized` check util in `src/utils/macros/`~~
-          - [x] **Instead it was created a normalized typesafe**
+            - [x] **Instead it was created a normalized typesafe**
         - [x] Create `assert_range` check util for debug builds
         - [x] Add runtime validation for release builds
         - [x] ~~Implement `NormalizedValue<T>` wrapper type~~
-          - [x] **Improved with safe type "Normalized"**
+            - [x] **Improved with safe type "Normalized"**
         - [x] Add conversion utilities between `u8` and `f32`
-    
+
 - [ ] **Basic ECS plugin structure** (50% of Phase 1)
-    - [ ] **Create foundation plugin architecture**
-        - [ ] Create `src/ai/mod.rs` with base plugin traits
-        - [ ] Implement `AiPlugin` as master coordinator
-        - [ ] Create plugin loading order system
-        - [ ] Add plugin dependency management
-    - [ ] **Create domain plugins**
-        - [ ] `PhysiologyPlugin` in `src/ai/physiology/mod.rs`
-        - [ ] `CognitionPlugin` in `src/ai/cognition/mod.rs`
-        - [ ] `SocialPlugin` in `src/ai/social/mod.rs`
-        - [ ] `PerceptionPlugin` in `src/ai/perception/mod.rs`
-        - [ ] `EnvironmentPlugin` in `src/world/environment/mod.rs`
+    - [x] **Create foundation plugin architecture**
+        - [x] Create `src/ai/mod.rs` with base plugin traits
+        - [x] Implement `AiPlugin` as master coordinator
+        - [x] Create plugin loading order system
+        - [x] Add plugin dependency management
+    - [x] **Create domain plugins**
+        - [x] `PhysiologyPlugin` in `src/ai/physiology/mod.rs`
+        - [x] `CognitionPlugin` in `src/ai/cognition/mod.rs`
+        - [x] `SocialPlugin` in `src/ai/social/mod.rs`
+        - [x] `PerceptionPlugin` in `src/ai/perception/mod.rs`
+        - [x] `EnvironmentPlugin` in `src/world/environment/mod.rs`
     - [ ] **Plugin registration system**
         - [ ] Each plugin registers its components with `app.register_types::<(...)>()`
         - [ ] Implement centralized event registration
