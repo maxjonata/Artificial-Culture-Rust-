@@ -11,16 +11,3 @@
 
 pub mod helpers;
 pub mod macros;
-
-use bevy::prelude::*;
-
-/// Utility plugin that provides common helper systems and resources.
-///
-/// This plugin registers utility systems that don't belong to any specific
-/// domain but are needed across the simulation for performance optimization
-/// and code reuse.
-pub struct UtilsPlugin;
-
-impl Plugin for UtilsPlugin {
-    fn build(&self, app: &mut App) {}
-}

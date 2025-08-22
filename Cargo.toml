@@ -19,3 +19,15 @@ iyes_perf_ui = "0.5.0"
 paste = "1.0"
 linkme = "0.3"
 lazy_static = "1.4"
+
+[profile.coverage]
+inherits = "dev"
+debug = true
+opt-level = 1
+overflow-checks = false
+lto = false
+codegen-units = 16
+incremental = true
+
+[features]
+default = ["bevy/dynamic_linking"]
