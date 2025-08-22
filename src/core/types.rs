@@ -348,3 +348,14 @@ impl DivAssign<f32> for Normalized {
         *self = *self / rhs;
     }
 }
+
+/// Utility functions for safe floating-point operations.
+pub mod utils {
+    use super::Normalized;
+
+    /// Converts Big Five personality trait (1-5 scale) to type-safe normalized value.
+    #[inline]
+    pub fn big_five_to_normalized(big_five_score: f32) -> Normalized {
+        Normalized::new((big_five_score - 1.0) / 4.0)
+    }
+}

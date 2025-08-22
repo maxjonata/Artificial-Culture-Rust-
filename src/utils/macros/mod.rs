@@ -18,7 +18,7 @@
 macro_rules! impl_register_types_tuple {
     ($($ty:ident),*) => {
         impl<$($ty: bevy::reflect::Reflect + bevy::reflect::TypePath + bevy::reflect::GetTypeRegistration + 'static),*>
-        crate::utils::helpers::RegisterTypesTuple for ($($ty,)*) {
+        $crate::utils::helpers::overrides::RegisterTypesTuple for ($($ty,)*) {
             fn register(app: &mut bevy::prelude::App) {
                 $(
                     app.register_type::<$ty>();

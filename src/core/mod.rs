@@ -1,9 +1,9 @@
 pub mod constants;
 pub mod entities;
 pub mod types;
-mod spawning;
+pub mod spawning;
 
-use crate::utils::helpers::AppRegisterTypesExt;
+use crate::utils::helpers::overrides::AppRegisterTypesExt;
 use bevy::prelude::*;
 
 /// Skeleton core infrastructure plugin (reset state)
@@ -19,12 +19,9 @@ impl Plugin for CorePlugin {
             .register_types::<(
                 constants::GameConstants,
                 entities::Npc,
-                types::Normalized,
-                types::QuantizedWeight,
-                types::AgentId
+                types::Normalized
             )>()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
     }
 }
-
