@@ -1,5 +1,4 @@
-use bevy::prelude::{App, Event, Reflect, Resource};
-use bevy::reflect::GetTypeRegistration;
+use bevy::prelude::App;
 
 /// Trait implemented for tuples of types that should be registered for reflection.
 pub trait RegisterTypesTuple {
@@ -30,6 +29,7 @@ impl AppRegisterTypesExt for App {
 }
 
 /// Trait implemented for tuples of events that should be registered.
+#[allow(unused)]
 pub trait RegisterEventsTuple {
     fn register(app: &mut App);
 }
@@ -39,6 +39,7 @@ pub trait RegisterEventsTuple {
 /// This follows Bevy's native pattern where `app.add_event::<T>()` registers
 /// a single event, but extends it to allow `app.register_events::<(EventA, EventB, EventC)>()`
 /// for bulk registration while maintaining the same ergonomic API style.
+#[allow(unused)]
 pub trait AppRegisterEventsExt {
     /// Register all events inside the provided tuple type parameter.
     ///

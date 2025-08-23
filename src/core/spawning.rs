@@ -67,7 +67,7 @@ pub fn spawn_npcs_system(
         // Insert navigation components
         // commands.entity(entity_id).insert();
 
-        println!("Spawned NPC_{} at position {:?} with proper top-down physics", i, position);
+        println!("Spawned NPC_{i} at position {position} with proper top-down physics");
     }
 
     println!("Spawned {} NPCs.", resources.num_npcs);

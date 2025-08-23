@@ -6,7 +6,7 @@
 //! - Type safety for scientific accuracy
 
 use bevy::prelude::*;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, RangeInclusive, Sub, SubAssign};
 
 /// Type-safe normalized floating-point value, always constrained to [0.0, 1.0].
 ///
@@ -99,7 +99,7 @@ impl Normalized {
     /// ```
     #[inline]
     pub fn try_new(value: f32) -> Result<Self, NormalizedError> {
-        if value >= 0.0 && value <= 1.0 {
+        if RangeInclusive::new(0.0, 1.0).contains(&value) {
             Ok(Self(value))
         } else {
             Err(NormalizedError::OutOfRange { value, min: 0.0, max: 1.0 })
@@ -159,7 +159,7 @@ impl std::fmt::Display for NormalizedError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             NormalizedError::OutOfRange { value, min, max } => {
-                write!(f, "Value {} is out of range [{}, {}]", value, min, max)
+                write!(f, "Value {value} is out of range [{min}, {max}]")
             }
         }
     }
@@ -346,16 +346,5 @@ impl DivAssign<f32> for Normalized {
     #[inline]
     fn div_assign(&mut self, rhs: f32) {
         *self = *self / rhs;
-    }
-}
-
-/// Utility functions for safe floating-point operations.
-pub mod utils {
-    use super::Normalized;
-
-    /// Converts Big Five personality trait (1-5 scale) to type-safe normalized value.
-    #[inline]
-    pub fn big_five_to_normalized(big_five_score: f32) -> Normalized {
-        Normalized::new((big_five_score - 1.0) / 4.0)
     }
 }

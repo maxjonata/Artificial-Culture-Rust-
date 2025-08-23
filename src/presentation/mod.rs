@@ -11,11 +11,9 @@
 //! - `visualization/`: Agent behavior visualization and world state rendering
 
 mod profiler;
+mod debug_ui;
 
 use bevy::prelude::*;
-use bevy_inspector_egui::bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::*;
-use iyes_perf_ui::PerfUiPlugin;
 
 /// Main presentation plugin that orchestrates all visualization systems.
 ///
@@ -28,18 +26,11 @@ pub struct PresentationPlugin;
 impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Add debug UI for agent state inspection
-            .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
-            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
-            .add_plugins(PerfUiPlugin)
-            .add_plugins(EguiPlugin::default())
-            .add_plugins(WorldInspectorPlugin::default())
+            // Add debug UI for agent state inspectio
+            .add_plugins(profiler::ProfilerPlugin)
+            .add_plugins(debug_ui::DebugUiPlugin)
             .add_systems(
-                Startup,
-                (
-                    setup_camera_and_background,
-                    profiler::spawn_perf_ui,
-                ),
+                Startup, setup_camera_and_background,
             );
     }
 }
