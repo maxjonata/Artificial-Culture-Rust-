@@ -40,7 +40,7 @@ smallest possible types for performance.
             - [x] **Improved with safe type "Normalized"**
         - [x] Add conversion utilities between `u8` and `f32`
 
-- [ ] **Basic ECS plugin structure** (50% of Phase 1)
+- [x] **Basic ECS plugin structure** (50% of Phase 1)
     - [x] **Create foundation plugin architecture**
         - [x] Create `src/ai/mod.rs` with base plugin traits
         - [x] Implement `AiPlugin` as master coordinator
@@ -52,45 +52,47 @@ smallest possible types for performance.
         - [x] `SocialPlugin` in `src/ai/social/mod.rs`
         - [x] `PerceptionPlugin` in `src/ai/perception/mod.rs`
         - [x] `EnvironmentPlugin` in `src/world/environment/mod.rs`
-    - [ ] **Plugin registration system**
+    - [x] **Plugin registration system**
         - [x] Each plugin registers its components with `app.register_types::<(...)>()`
         - [x] Implement centralized event registration
-        - [ ] Add system scheduling and priorities
+        - [ ] ~~Add system scheduling and priorities~~
+        
+          **Premature tasks, there's no system to schedule**
         - [x] Create plugin configuration resources
 
 ### 1.2 Development Tools Setup (Week 2)
 
-- [ ] **Debug UI with `bevy_inspector_egui`**
-    - [ ] Create `src/presentation/debug_ui.rs`
-    - [ ] Implement component inspector panels
-    - [ ] Add real-time value monitoring
-    - [ ] Create performance metrics display
-    - [ ] Add entity search and filtering
-    - [ ] Implement custom component editors
+- [x] **Debug UI with `bevy_inspector_egui`**
+    - [x] Create `src/presentation/debug_ui.rs`
+    - [x] Implement component inspector panels
+    - [x] Add real-time value monitoring
+    - [x] Create performance metrics display
+    - [x] Add entity search and filtering
+    - [x] Implement custom component editors
 
-- [ ] **Performance profiling setup**
-    - [ ] Integrate `bevy_framepace` for consistent timing
-    - [ ] Create `src/presentation/profiler.rs`
-    - [ ] Add system execution time tracking
-    - [ ] Implement memory usage monitoring
+- [x] **Performance profiling setup**
+    - [x] Integrate `bevy_framepace` for consistent timing
+    - [x] Create `src/presentation/profiler.rs`
+    - [x] Add system execution time tracking
+    - [x] Implement memory usage monitoring
     - [ ] Create performance bottleneck alerts
-    - [ ] Add frame time graphs and metrics
+    - [x] Add frame time graphs and metrics
 
-- [ ] **Basic logging system**
-    - [ ] Configure `tracing` with multiple log levels
-    - [ ] Create domain-specific log targets
-    - [ ] Implement file-based logging rotation
-    - [ ] Add development vs production log configs
-    - [ ] Create error reporting system
+- [x] **Basic logging system**
+    - [x] Configure `tracing` with multiple log levels
+    - [x] Create domain-specific log targets
+    - [x] Implement file-based logging rotation
+    - [x] Add development vs production log configs
+    - [x] Create error reporting system
 
 ### 1.3 Entity Builder System (Week 3)
 
-- [ ] **Enhance generic type-safe builder**
-    - [ ] Extend `src/core/builders.rs` with agent-specific states
-    - [ ] Add validation for required components
-    - [ ] Implement builder trait constraints
-    - [ ] Create default configuration presets
-    - [ ] Add serialization support for builder configs
+- [x] **Enhance generic type-safe builder**
+    - [x] Extend `src/core/builders.rs` with agent-specific states
+    - [x] Add validation for required components
+    - [x] Implement builder trait constraints
+    - [x] Create default configuration presets
+    - [x] Add serialization support for builder configs
 
 - [ ] **Create specialized builders**
     - [ ] `NpcBuilder` with personality presets
