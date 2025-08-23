@@ -4,5 +4,5 @@
 //! as the main codebase for easy navigation and maintenance.
 
 pub mod core;
-pub mod utils;
 pub mod presentation;
+pub mod utils; // Legacy tests for migrated utilities (now in core)

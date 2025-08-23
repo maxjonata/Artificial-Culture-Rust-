@@ -56,6 +56,7 @@ impl Normalized {
     ///
     /// # Examples
     /// ```rust
+    /// # use artificial_culture_rust::core::types::Normalized;
     /// let n1 = Normalized::new(0.5);   // 0.5
     /// let n2 = Normalized::new(1.5);   // 1.0 (clamped)
     /// let n3 = Normalized::new(-0.2);  // 0.0 (clamped)
@@ -80,6 +81,7 @@ impl Normalized {
     ///
     /// # Examples
     /// ```rust
+    /// # use artificial_culture_rust::core::types::Normalized;
     /// let n = unsafe { Normalized::new_unchecked(0.7) };
     /// ```
     #[inline]
@@ -94,6 +96,7 @@ impl Normalized {
     ///
     /// # Examples
     /// ```rust
+    /// # use artificial_culture_rust::core::types::Normalized;
     /// assert!(Normalized::try_new(0.5).is_ok());
     /// assert!(Normalized::try_new(1.5).is_err());
     /// ```
@@ -146,6 +149,59 @@ impl Normalized {
     #[inline]
     pub fn clamp(self, min: Self, max: Self) -> Self {
         Self::new(self.0.clamp(min.0, max.0))
+    }
+
+    /// Creates a normalized value from a Big Five personality trait score (1-5 scale).
+    ///
+    /// This is a domain-specific conversion utility embedded directly in the type
+    /// following the component-private functionality principle.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use artificial_culture_rust::core::types::Normalized;
+    /// let low_openness = Normalized::from_big_five(1.0);   // 0.0
+    /// let mid_openness = Normalized::from_big_five(3.0);   // 0.5
+    /// let high_openness = Normalized::from_big_five(5.0);  // 1.0
+    /// let clamped = Normalized::from_big_five(6.0);        // 1.0 (clamped)
+    /// ```
+    #[inline]
+    pub fn from_big_five(big_five_score: f32) -> Self {
+        Self::new((big_five_score - 1.0) / 4.0)
+    }
+
+    /// Validates that a raw f32 value is within the normalized range [0.0, 1.0].
+    ///
+    /// This is a utility for validating external input before conversion to Normalized.
+    /// Panics in debug builds if the value is out of range.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use artificial_culture_rust::core::types::Normalized;
+    /// assert!(Normalized::validate_raw(0.5, "mood"));
+    /// // Normalized::validate_raw(1.5, "invalid"); // Panics in debug
+    /// ```
+    #[inline]
+    pub fn validate_raw(value: f32, name: &str) -> bool {
+        Self::assert_range(value, name, 0.0..=1.0)
+    }
+
+    /// Generic range assertion utility for validation.
+    ///
+    /// This is embedded in the Normalized type as it's primarily used for
+    /// validating values before normalization.
+    #[inline]
+    pub fn assert_range<T>(value: T, name: &str, range: std::ops::RangeInclusive<T>) -> bool
+    where
+        T: PartialOrd + std::fmt::Display + Copy,
+    {
+        assert!(range.contains(&value),
+                "{} must be in range [{}, {}], got: {}",
+                name,
+                range.start(),
+                range.end(),
+                value
+        );
+        true
     }
 }
 

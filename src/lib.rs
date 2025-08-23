@@ -20,9 +20,8 @@
 //! # Core Modules
 //!
 //! - [`ai`] - Agent intelligence systems (cognition, physiology, perception, social)
-//! - [`core`] - Core game systems and utilities
+//! - [`core`] - Core game systems, utilities, and the generic type-safe builder system
 //! - [`presentation`] - Visualization, debugging, and performance monitoring
-//! - [`utils`] - Shared utilities and helper functions
 //!
 //! # Performance Monitoring
 //!
@@ -47,7 +46,6 @@
 pub mod ai;
 pub mod core;
 pub mod presentation;
-pub mod utils;
 
 #[cfg(test)]
 pub mod tests;

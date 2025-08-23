@@ -344,6 +344,17 @@ pub trait ComponentSystemExt {
     fn register_component_with_behaviors<T>(&mut self) -> &mut Self
     where
         T: ComponentCore + ComponentBehavior + Component + Reflect + GetTypeRegistration;
+
+    /// Register multiple components with automatic behavior systems
+    ///
+    /// This provides bulk registration functionality embedded directly in the
+    /// builder system following the component-private functionality principle.
+    fn register_components_with_behaviors<T: ComponentTupleRegistration>(&mut self) -> &mut Self;
+}
+
+/// Trait for registering tuples of components with behaviors
+pub trait ComponentTupleRegistration {
+    fn register_all(app: &mut App);
 }
 
 impl ComponentSystemExt for App {
@@ -358,6 +369,11 @@ impl ComponentSystemExt for App {
                 component_telemetry_system::<T>,
                 component_performance_monitoring_system::<T>,
             ))
+    }
+
+    fn register_components_with_behaviors<T: ComponentTupleRegistration>(&mut self) -> &mut Self {
+        T::register_all(self);
+        self
     }
 }
 
@@ -488,6 +504,26 @@ macro_rules! builder_method {
                 }
             }
             self
+        }
+    };
+}
+
+/// Macro for registering multiple components with behaviors
+///
+/// This macro is embedded in the builder system following the component-private
+/// functionality principle, providing bulk registration for enhanced components.
+#[macro_export]
+macro_rules! impl_component_tuple_registration {
+    ($($ty:ident),*) => {
+        impl<$($ty),*> ComponentTupleRegistration for ($($ty,)*)
+        where
+            $($ty: ComponentCore + ComponentBehavior + Component + Reflect + GetTypeRegistration,)*
+        {
+            fn register_all(app: &mut App) {
+                $(
+                    app.register_component_with_behaviors::<$ty>();
+                )*
+            }
         }
     };
 }
