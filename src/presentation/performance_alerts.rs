@@ -208,6 +208,12 @@ pub struct PerformanceMonitorState {
     pub last_monitoring_time: f64,
     pub last_flush_time: f64,
     pub current_log_file: Option<PathBuf>,
+    // Alert cooldown tracking to prevent spam
+    pub last_frame_time_alert: f64,
+    pub last_fps_drop_alert: f64,
+    pub last_frame_jitter_alert: f64,
+    pub last_cpu_alert: f64,
+    pub last_memory_alert: f64,
 }
 
 impl Default for PerformanceMonitorState {
@@ -229,6 +235,12 @@ impl Default for PerformanceMonitorState {
             last_monitoring_time: 0.0,
             last_flush_time: 0.0,
             current_log_file: None,
+            // Initialize alert cooldowns
+            last_frame_time_alert: 0.0,
+            last_fps_drop_alert: 0.0,
+            last_frame_jitter_alert: 0.0,
+            last_cpu_alert: 0.0,
+            last_memory_alert: 0.0,
         }
     }
 }
@@ -299,10 +311,10 @@ fn performance_monitoring_system(
     state.last_monitoring_time = current_time;
 
     // Monitor frame performance metrics
-    monitor_frame_performance(&config, &mut state, &diagnostics, &mut alert_events);
+    monitor_frame_performance(&config, &mut state, &diagnostics, &mut alert_events, current_time);
 
     // Monitor system resource metrics
-    monitor_system_resources(&config, &mut state, &diagnostics, &mut alert_events);
+    monitor_system_resources(&config, &mut state, &diagnostics, &mut alert_events, current_time);
 
     // Monitor entity count and performance correlation
     let entity_count = query.iter().count() as u32;
@@ -315,6 +327,7 @@ fn monitor_frame_performance(
     state: &mut PerformanceMonitorState,
     diagnostics: &DiagnosticsStore,
     alert_events: &mut EventWriter<PerformanceAlert>,
+    current_time: f64,
 ) {
     // Check frame time
     if let Some(frame_time_diag) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FRAME_TIME) {
@@ -327,18 +340,29 @@ fn monitor_frame_performance(
                 state.recent_frame_times.pop_front();
             }
 
-            // Alert on high frame time
+            // Alert on sustained high frame time (with cooldown to prevent spam)
             if frame_time_ms_f32 > config.target_frame_time_ms {
-                let fps_equivalent = 1000.0 / frame_time_ms_f32;
-                alert_events.write(PerformanceAlert::HighFrameTime {
-                    current_ms: frame_time_ms_f32,
-                    target_ms: config.target_frame_time_ms,
-                    fps_equivalent,
-                });
+                let high_frame_time_duration = state.recent_frame_times.iter()
+                    .rev()
+                    .take_while(|&&time| time > config.target_frame_time_ms)
+                    .count() as u64 * config.monitoring_interval_ms;
+
+                // Only alert if sustained AND enough time has passed since last alert (5 second cooldown)
+                let alert_cooldown_ms = 5000.0;
+                if high_frame_time_duration >= config.sustained_alert_duration_ms
+                   && (current_time - state.last_frame_time_alert) * 1000.0 >= alert_cooldown_ms {
+                    let fps_equivalent = 1000.0 / frame_time_ms_f32;
+                    alert_events.write(PerformanceAlert::HighFrameTime {
+                        current_ms: frame_time_ms_f32,
+                        target_ms: config.target_frame_time_ms,
+                        fps_equivalent,
+                    });
+                    state.last_frame_time_alert = current_time;
+                }
             }
 
-            // Check frame time jitter/variance
-            if state.recent_frame_times.len() >= 10 {
+            // Check frame time jitter/variance (only check periodically with cooldown)
+            if state.recent_frame_times.len() >= 10 && state.recent_frame_times.len() % 10 == 0 {
                 let recent_times: Vec<f32> = state.recent_frame_times.iter().cloned().collect();
                 let mean = recent_times.iter().sum::<f32>() / recent_times.len() as f32;
                 let variance = recent_times.iter()
@@ -346,12 +370,16 @@ fn monitor_frame_performance(
                     .sum::<f32>() / recent_times.len() as f32;
                 let std_dev = variance.sqrt();
 
-                if std_dev > config.frame_jitter_threshold_ms {
+                // Only alert with cooldown (10 second cooldown for jitter)
+                let jitter_cooldown_ms = 10000.0;
+                if std_dev > config.frame_jitter_threshold_ms
+                   && (current_time - state.last_frame_jitter_alert) * 1000.0 >= jitter_cooldown_ms {
                     alert_events.write(PerformanceAlert::HighFrameJitter {
                         variance_ms: std_dev,
                         threshold_ms: config.frame_jitter_threshold_ms,
                         recent_frame_times: recent_times.clone(),
                     });
+                    state.last_frame_jitter_alert = current_time;
                 }
             }
         }
@@ -374,12 +402,16 @@ fn monitor_frame_performance(
                     .take_while(|&&fps| fps < config.target_fps)
                     .count() as u64 * config.monitoring_interval_ms;
 
-                if low_fps_duration >= config.fps_drop_duration_threshold_ms {
+                // Only alert with cooldown (5 second cooldown for FPS drops)
+                let fps_cooldown_ms = 5000.0;
+                if low_fps_duration >= config.fps_drop_duration_threshold_ms
+                   && (current_time - state.last_fps_drop_alert) * 1000.0 >= fps_cooldown_ms {
                     alert_events.write(PerformanceAlert::LowFpsDrops {
                         current_fps: current_fps_f32,
                         target_fps: config.target_fps,
                         duration_ms: low_fps_duration,
                     });
+                    state.last_fps_drop_alert = current_time;
                 }
             }
         }
@@ -392,6 +424,7 @@ fn monitor_system_resources(
     state: &mut PerformanceMonitorState,
     diagnostics: &DiagnosticsStore,
     alert_events: &mut EventWriter<PerformanceAlert>,
+    current_time: f64,
 ) {
     // Monitor CPU usage
     if let Some(cpu_diag) = diagnostics.get(&SystemInformationDiagnosticsPlugin::SYSTEM_CPU_USAGE) {
@@ -410,12 +443,16 @@ fn monitor_system_resources(
                     .take_while(|&&usage| usage > config.cpu_usage_threshold)
                     .count() as u64 * config.monitoring_interval_ms;
 
-                if high_cpu_duration >= config.sustained_alert_duration_ms {
+                // Only alert with cooldown (10 second cooldown for CPU)
+                let cpu_cooldown_ms = 10000.0;
+                if high_cpu_duration >= config.sustained_alert_duration_ms
+                   && (current_time - state.last_cpu_alert) * 1000.0 >= cpu_cooldown_ms {
                     alert_events.write(PerformanceAlert::HighCpuUsage {
                         current: cpu_usage_f32,
                         threshold: config.cpu_usage_threshold,
                         duration_ms: high_cpu_duration,
                     });
+                    state.last_cpu_alert = current_time;
                 }
             }
         }
@@ -436,13 +473,17 @@ fn monitor_system_resources(
             let estimated_total_memory_mb = estimated_total_memory_gb * 1024.0;
             let mem_percentage = (mem_usage_mb / estimated_total_memory_mb) * 100.0;
 
-            if mem_percentage > config.memory_usage_threshold {
+            // Only alert with cooldown (15 second cooldown for memory)
+            let memory_cooldown_ms = 15000.0;
+            if mem_percentage > config.memory_usage_threshold
+               && (current_time - state.last_memory_alert) * 1000.0 >= memory_cooldown_ms {
                 alert_events.write(PerformanceAlert::HighMemoryUsage {
                     current_mb: mem_usage_mb,
                     total_mb: estimated_total_memory_mb,
                     percentage: mem_percentage,
                     threshold: config.memory_usage_threshold,
                 });
+                state.last_memory_alert = current_time;
             }
         }
     }
