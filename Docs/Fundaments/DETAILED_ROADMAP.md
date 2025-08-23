@@ -53,7 +53,7 @@ smallest possible types for performance.
         - [x] `PerceptionPlugin` in `src/ai/perception/mod.rs`
         - [x] `EnvironmentPlugin` in `src/world/environment/mod.rs`
     - [ ] **Plugin registration system**
-        - [ ] Each plugin registers its components with `app.register_types::<(...)>()`
+        - [x] Each plugin registers its components with `app.register_types::<(...)>()`
         - [ ] Implement centralized event registration
         - [ ] Add system scheduling and priorities
         - [ ] Create plugin configuration resources

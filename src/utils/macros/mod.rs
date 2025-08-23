@@ -27,3 +27,17 @@ macro_rules! impl_register_types_tuple {
         }
     };
 }
+
+#[macro_export]
+macro_rules! impl_register_events_tuple {
+    ($($ty:ident),*) => {
+        impl<$($ty: bevy::prelude::Event + 'static),*>
+        $crate::utils::helpers::overrides::RegisterEventsTuple for ($($ty,)*) {
+            fn register(app: &mut bevy::prelude::App) {
+                $(
+                    app.add_event::<$ty>();
+                )*
+            }
+        }
+    }
+}
