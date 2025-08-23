@@ -19,6 +19,12 @@ iyes_perf_ui = "0.5.0"
 paste = "1.0"
 linkme = "0.3"
 lazy_static = "1.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.0"
 
 [profile.coverage]
 inherits = "dev"

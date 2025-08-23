@@ -11,6 +11,7 @@
 //! - `visualization/`: Agent behavior visualization and world state rendering
 
 mod profiler;
+pub mod performance_alerts;
 mod debug_ui;
 
 use bevy::prelude::*;
@@ -26,9 +27,10 @@ pub struct PresentationPlugin;
 impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Add debug UI for agent state inspectio
-            .add_plugins(profiler::ProfilerPlugin)
-            .add_plugins(debug_ui::DebugUiPlugin)
+            // Add debug UI for agent state inspection
+            .add_plugins(profiler::             ProfilerPlugin)
+            .add_plugins(debug_ui::             DebugUiPlugin)
+            .add_plugins(performance_alerts::   PerformanceAlertsPlugin)
             .add_systems(
                 Startup, setup_camera_and_background,
             );
