@@ -16,8 +16,6 @@ use presentation::PresentationPlugin;
 use world::WorldPlugin;
 
 /// Entry point for the Artificial Society simulation.
-///
-/// Sets up the Bevy application with all necessary plugins for the agent-based simulation.
 fn main() {
     App::new()
         .add_plugins((

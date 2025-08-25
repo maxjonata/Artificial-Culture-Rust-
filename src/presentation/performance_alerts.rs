@@ -40,64 +40,54 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Performance alert events that can be triggered by the monitoring system.
 #[derive(Event, Debug, Clone, Serialize, Deserialize)]
 pub enum PerformanceAlert {
-    /// CPU usage exceeded threshold for sustained period
     HighCpuUsage {
         current: f32,
         threshold: f32,
         duration_ms: u64,
     },
-    /// RAM usage exceeded threshold
     HighMemoryUsage {
         current_mb: f32,
         total_mb: f32,
         percentage: f32,
         threshold: f32,
     },
-    /// GPU usage exceeded threshold for sustained period
     HighGpuUsage {
         current: f32,
         threshold: f32,
         duration_ms: u64,
     },
-    /// Disk I/O usage exceeded threshold
     HighDiskIo {
         current: f32,
         threshold: f32,
-        operation_type: String, // "read" or "write"
+        operation_type: String,
     },
-    /// Frame time exceeded target (60 FPS = 16.67ms)
     HighFrameTime {
         current_ms: f32,
         target_ms: f32,
         fps_equivalent: f32,
     },
-    /// FPS dropped below target for sustained period
     LowFpsDrops {
         current_fps: f32,
         target_fps: f32,
         duration_ms: u64,
     },
-    /// Frame time variance/jitter exceeded threshold
     HighFrameJitter {
         variance_ms: f32,
         threshold_ms: f32,
         recent_frame_times: Vec<f32>,
     },
-    /// Individual system execution time exceeded budget
     SlowSystemExecution {
         system_name: String,
         execution_time_ms: f32,
         threshold_ms: f32,
         frame_percentage: f32,
     },
-    /// Total AI processing time exceeded budget
     SlowAiProcessing {
         total_ai_time_ms: f32,
         threshold_ms: f32,
         frame_percentage: f32,
         contributing_systems: Vec<String>,
     },
-    /// Entity count causing performance degradation
     EntityCountPerformanceImpact {
         entity_count: u32,
         baseline_entity_count: u32,
@@ -120,9 +110,9 @@ pub struct AlertLogEntry {
 /// Alert severity levels
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum AlertSeverity {
-    Warning,  // Performance concern but not critical
-    Critical, // Immediate performance impact
-    Severe,   // Simulation integrity at risk
+    Warning,
+    Critical,
+    Severe,
 }
 
 /// Baseline "normal" performance values for comparison
@@ -139,27 +129,18 @@ pub struct BaselineValues {
 /// Performance monitoring configuration and thresholds
 #[derive(Resource, Debug)]
 pub struct PerformanceMonitorConfig {
-    // System resource thresholds
     pub cpu_usage_threshold: f32,
     pub memory_usage_threshold: f32,
     pub gpu_usage_threshold: f32,
     pub disk_io_threshold: f32,
-    
-    // Frame performance thresholds
     pub target_frame_time_ms: f32,
     pub target_fps: f32,
     pub frame_jitter_threshold_ms: f32,
     pub fps_drop_duration_threshold_ms: u64,
-    
-    // AI system performance thresholds
     pub system_execution_threshold_ms: f32,
     pub total_ai_processing_threshold_ms: f32,
-    
-    // Monitoring intervals
     pub monitoring_interval_ms: u64,
     pub sustained_alert_duration_ms: u64,
-    
-    // Logging configuration
     pub log_directory: PathBuf,
     pub log_buffer_size: usize,
     pub flush_interval_ms: u64,
@@ -168,30 +149,21 @@ pub struct PerformanceMonitorConfig {
 impl Default for PerformanceMonitorConfig {
     fn default() -> Self {
         Self {
-            // System resource thresholds (industry standards)
-            cpu_usage_threshold: 80.0,      // 80% CPU usage
-            memory_usage_threshold: 85.0,   // 85% memory usage
-            gpu_usage_threshold: 90.0,      // 90% GPU usage
-            disk_io_threshold: 80.0,        // 80% disk I/O utilization
-            
-            // Frame performance thresholds (60 FPS target)
-            target_frame_time_ms: 16.67,    // 60 FPS = 16.67ms per frame
-            target_fps: 60.0,               // 60 FPS target
-            frame_jitter_threshold_ms: 5.0, // 5ms variance threshold
-            fps_drop_duration_threshold_ms: 1000, // 1 second of low FPS
-            
-            // AI system performance budgets
-            system_execution_threshold_ms: 5.0,  // 5ms per system (30% of frame budget)
-            total_ai_processing_threshold_ms: 10.0, // 10ms total AI (60% of frame budget)
-            
-            // Monitoring configuration
-            monitoring_interval_ms: 100,     // Check every 100ms (10Hz)
-            sustained_alert_duration_ms: 500, // 500ms sustained for alert
-            
-            // Logging configuration
+            cpu_usage_threshold: 80.0,
+            memory_usage_threshold: 85.0,
+            gpu_usage_threshold: 90.0,
+            disk_io_threshold: 80.0,
+            target_frame_time_ms: 16.67,
+            target_fps: 60.0,
+            frame_jitter_threshold_ms: 5.0,
+            fps_drop_duration_threshold_ms: 1000,
+            system_execution_threshold_ms: 5.0,
+            total_ai_processing_threshold_ms: 10.0,
+            monitoring_interval_ms: 100,
+            sustained_alert_duration_ms: 500,
             log_directory: PathBuf::from("logs"),
-            log_buffer_size: 100,            // Buffer 100 alerts before flush
-            flush_interval_ms: 5000,         // Flush every 5 seconds
+            log_buffer_size: 100,
+            flush_interval_ms: 5000,
         }
     }
 }
@@ -208,7 +180,6 @@ pub struct PerformanceMonitorState {
     pub last_monitoring_time: f64,
     pub last_flush_time: f64,
     pub current_log_file: Option<PathBuf>,
-    // Alert cooldown tracking to prevent spam
     pub last_frame_time_alert: f64,
     pub last_fps_drop_alert: f64,
     pub last_frame_jitter_alert: f64,
@@ -220,14 +191,14 @@ impl Default for PerformanceMonitorState {
     fn default() -> Self {
         Self {
             baseline_values: BaselineValues {
-                normal_cpu_usage: 25.0,        // Baseline 25% CPU
-                normal_memory_usage_mb: 512.0, // Baseline 512MB
-                normal_frame_time_ms: 16.67,   // Baseline 60 FPS
-                normal_fps: 60.0,              // Baseline 60 FPS
-                normal_entity_count: 100,      // Baseline 100 entities
-                normal_ai_processing_time_ms: 5.0, // Baseline 5ms AI processing
+                normal_cpu_usage: 25.0,
+                normal_memory_usage_mb: 512.0,
+                normal_frame_time_ms: 16.67,
+                normal_fps: 60.0,
+                normal_entity_count: 100,
+                normal_ai_processing_time_ms: 5.0,
             },
-            recent_frame_times: VecDeque::with_capacity(60), // 6 seconds at 10Hz
+            recent_frame_times: VecDeque::with_capacity(60),
             recent_fps_values: VecDeque::with_capacity(60),
             recent_cpu_usage: VecDeque::with_capacity(60),
             recent_memory_usage: VecDeque::with_capacity(60),
@@ -235,7 +206,6 @@ impl Default for PerformanceMonitorState {
             last_monitoring_time: 0.0,
             last_flush_time: 0.0,
             current_log_file: None,
-            // Initialize alert cooldowns
             last_frame_time_alert: 0.0,
             last_fps_drop_alert: 0.0,
             last_frame_jitter_alert: 0.0,
@@ -299,7 +269,7 @@ fn performance_monitoring_system(
     mut state: ResMut<PerformanceMonitorState>,
     diagnostics: Res<DiagnosticsStore>,
     mut alert_events: EventWriter<PerformanceAlert>,
-    query: Query<Entity>, // For entity count monitoring
+    query: Query<Entity>,
 ) {
     let current_time = time.elapsed_secs_f64();
 

@@ -1,24 +1,4 @@
-//! Generic Type-Safe Builder System for ECS Components
-//!
-//! This module provides a foundational trait-based architecture that transforms the traditional
-//! setter-based builder pattern into a comprehensive component foundation system. It embeds
-//! common functionality directly into components while maintaining ECS compatibility and
-//! performance characteristics suitable for real-time simulation.
-//!
-//! # Architecture Overview
-//!
-//! The system is built around three core traits:
-//! - `ComponentCore`: Provides built-in event generation, validation, and telemetry
-//! - `ComponentBuilder`: Type-safe builder pattern with automatic state management
-//! - `ComponentBehavior`: Common behaviors like performance monitoring and diagnostics
-//!
-//! # Design Principles
-//!
-//! 1. **ECS Compatibility**: All traits work seamlessly with Bevy's Component system
-//! 2. **Zero-Cost Abstractions**: Default implementations compile to optimal code
-//! 3. **Domain Separation**: Components remain within their AI domains
-//! 4. **Performance First**: Built-in monitoring with minimal overhead
-//! 5. **Type Safety**: Compile-time guarantees for component construction
+//! Type-safe builder system for ECS components.
 
 use bevy::prelude::*;
 use bevy::reflect::GetTypeRegistration;
@@ -29,8 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::presentation::performance_alerts::PerformanceAlert;
 
-/// Core trait that all enhanced components must implement.
-/// Provides built-in event generation, validation, and telemetry capabilities.
+/// Core trait for enhanced components with validation and telemetry.
 pub trait ComponentCore: Component + Debug + Clone + Send + Sync + 'static {
     /// The type of events this component can generate
     type EventType: Event + Clone + Debug;
