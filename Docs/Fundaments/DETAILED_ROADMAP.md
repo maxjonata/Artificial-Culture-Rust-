@@ -95,7 +95,8 @@ smallest possible types for performance.
     - [x] Add serialization support for builder configs
 
 - [ ] **Create specialized builders**
-    - [ ] `NpcBuilder` with personality presets
+    - [ ] ~~`NpcBuilder` with personality presets~~
+      **with no personality presets yet, cause theres not even personality**
     - [ ] `EnvironmentBuilder` for world objects
     - [ ] `LocationBuilder` for places and zones
     - [ ] Add builder extension traits for domain-specific features

@@ -3,7 +3,6 @@ mod ai;
 mod core;
 mod world;
 mod presentation;
-mod utils;
 
 #[cfg(test)]
 mod tests;

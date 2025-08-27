@@ -5,6 +5,7 @@ pub mod performance_alerts;
 mod debug_ui;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 
 /// Main presentation plugin for visualization systems.
 pub struct PresentationPlugin;
@@ -16,6 +17,7 @@ impl Plugin for PresentationPlugin {
             .add_plugins(profiler::             ProfilerPlugin)
             .add_plugins(debug_ui::             DebugUiPlugin)
             .add_plugins(performance_alerts::   PerformanceAlertsPlugin)
+            .add_plugins(RapierDebugRenderPlugin::default())
             .add_systems(
                 Startup, setup_camera_and_background,
             );
