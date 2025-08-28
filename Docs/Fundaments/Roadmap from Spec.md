@@ -25,7 +25,7 @@ Agent-based AI simulation creating believable NPCs through emergent social dynam
   - `openness: f32`, `conscientiousness: f32`, `extraversion: f32`, `agreeableness: f32`, `neuroticism: f32`
 - [x] **1.4.2** Create `RoleAffinities` component with continuous role preferences (0.0-1.0 each)
   - `leadership_tendency: f32`, `cooperation_drive: f32`, `exploration_urge: f32`, `protection_instinct: f32`
-- [ ] **1.4.3** Implement `PersonalityShiftSystem` (**Update Schedule, Event-Driven**)
+- [x] **1.4.3** Implement `PersonalityShiftSystem` (**Update Schedule, Event-Driven**)
   - **Triggers:** `StressThresholdCrossed`, `TraumaticEvent`, `SuccessfulLeadership` events
   - **Inputs:** `PersonalityVector`, `StressLevel`, `RecentEvents`, `RoleAffinities`
   - **Processing:** Apply stress-based temporary shifts to personality dimensions using sigmoid curves. High stress increases neuroticism (+0.1-0.3), decreases openness (-0.1-0.2). Traumatic events create permanent small shifts (-0.05 to +0.05). Calculate role affinity changes based on successful/failed leadership attempts.

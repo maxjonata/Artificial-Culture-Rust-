@@ -1,3 +1,5 @@
+mod components;
+
 use bevy::prelude::*;
 
 /// Decision-making, memory, and belief systems for agent cognition.
@@ -6,7 +8,6 @@ use bevy::prelude::*;
 pub struct AiCognitionPlugin;
 
 impl Plugin for AiCognitionPlugin {
-
     fn build(&self, app: &mut App) {
         // TODO: Add domain-specific AI plugins as they are implemented
         // Future systems to be added:
@@ -16,5 +17,7 @@ impl Plugin for AiCognitionPlugin {
         // - Decision-making system
         // - Goal planning system
         // - Attention allocation system
+        app
+            .add_plugins(components::RegisterCognitionComponentsPlugin);
     }
 }

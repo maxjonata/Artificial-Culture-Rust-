@@ -190,7 +190,7 @@ impl Normalized {
     /// This is embedded in the Normalized type as it's primarily used for
     /// validating values before normalization.
     #[inline]
-    pub fn assert_range<T>(value: T, name: &str, range: std::ops::RangeInclusive<T>) -> bool
+    pub fn assert_range<T>(value: T, name: &str, range: RangeInclusive<T>) -> bool
     where
         T: PartialOrd + std::fmt::Display + Copy,
     {
@@ -403,19 +403,4 @@ impl DivAssign<f32> for Normalized {
     fn div_assign(&mut self, rhs: f32) {
         *self = *self / rhs;
     }
-}
-
-struct PersonalityVector {
-    openness: Normalized, 
-    conscientiousness: Normalized, 
-    extraversion: Normalized, 
-    agreeableness: Normalized, 
-    neuroticism: Normalized
-}
-
-struct RoleAffinities {
-    leadership_tendency: Normalized, 
-    cooperation_drive: Normalized, 
-    exploration_urge: Normalized, 
-    protection_instinct: Normalized
 }
