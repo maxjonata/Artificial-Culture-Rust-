@@ -249,3 +249,4 @@ cargo test
 cargo run
 ```
 
+Never read, write or interact in any way with files inside Docs\Backstory
