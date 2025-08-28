@@ -412,3 +412,10 @@ struct PersonalityVector {
     agreeableness: Normalized, 
     neuroticism: Normalized
 }
+
+struct RoleAffinities {
+    leadership_tendency: Normalized, 
+    cooperation_drive: Normalized, 
+    exploration_urge: Normalized, 
+    protection_instinct: Normalized
+}
