@@ -222,7 +222,7 @@ Docs/
 
 **✅ CURRENT (Authoritative):**
 - [Main Specification](Docs/Fundaments/Artificial%20Society_%20Complete%20Technical%20and%20Philosophical%20Specification.md)
-- [Implementation Roadmap](Docs/Fundaments/DETAILED_ROADMAP.md)
+- [Implementation Roadmap](Docs/Fundaments/Roadmap%20from%20Spec.md)
 - [Normalized Type Guide](docs/normalized_type_guide.md)
 
 **⚠️ HISTORICAL (Reference Only):**
