@@ -404,3 +404,11 @@ impl DivAssign<f32> for Normalized {
         *self = *self / rhs;
     }
 }
+
+struct PersonalityVector {
+    openness: Normalized, 
+    conscientiousness: Normalized, 
+    extraversion: Normalized, 
+    agreeableness: Normalized, 
+    neuroticism: Normalized
+}
