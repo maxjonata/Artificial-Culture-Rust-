@@ -42,7 +42,7 @@ pub struct Normalized(f32);
 
 /// Compact agent identifier, supports up to 65,535 agents.
 /// Use this instead of Entity for internal references to optimize memory.
-pub type AgentId = u16;
+pub type EntityId = u16;
 
 /// Quantized weight value (0-255) that maps to [0.0, 1.0] range.
 /// Used for neural connections and memory weights to save memory.

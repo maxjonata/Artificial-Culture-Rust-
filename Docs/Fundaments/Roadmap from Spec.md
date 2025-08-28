@@ -8,16 +8,15 @@ Agent-based AI simulation creating believable NPCs through emergent social dynam
 ## Phase 1: Foundation Layer (Weeks 1-3) - 15%
 
 ### Week 1: Core Type System & Architecture
-- [ ] **1.1.1** Implement `Normalized<f32>` wrapper type with automatic 0.0-1.0 clamping
-- [ ] **1.1.2** Create type aliases in `src/core/types.rs` for `EntityId` (u16), `Weight` (u8)
-- [ ] **1.1.3** Implement conversion utilities between u8 (0-255) and f32 (0.0-1.0)
-- [ ] **1.1.4** Add runtime validation for normalized ranges in debug and release builds
-- [ ] **1.2.1** Implement `register_types!` macro for component registration
-- [ ] **1.2.2** Create `assert_range` utility for value validation
-- [ ] **1.3.1** Create master `AiPlugin` coordinator in `src/ai/mod.rs`
-- [ ] **1.3.2** Set up domain plugin structure: Physiology, Cognition, Social, Perception, Environment
-- [ ] **1.3.3** Implement plugin dependency management and loading order
-- [ ] **1.3.4** Create centralized event registration system
+- [x] **1.1.1** Implement `Normalized<f32>` wrapper type with automatic 0.0-1.0 clamping
+- [x] **1.1.2** Create type aliases in `src/core/types.rs` for `EntityId` (u16), `Weight` (u8)
+- [x] **1.1.3** Implement conversion utilities between u8 (0-255) and f32 (0.0-1.0)
+- [x] **1.1.4** Add runtime validation for normalized ranges in debug and release builds
+- [x] **1.2.1** Create `assert_range` utility for value validation
+- [x] **1.3.1** Create master `AiPlugin` coordinator in `src/ai/mod.rs`
+- [x] **1.3.2** Set up domain plugin structure: Physiology, Cognition, Social, Perception, Environment
+- [x] **1.3.3** Implement plugin dependency management and loading order **(factories pattern)**
+- [x] **1.3.4** Create centralized event registration system **(helpers pattern)**
 
 **Success Criteria:** All types compile, plugins load without errors, debug validation works
 
