@@ -2,11 +2,8 @@ pub mod constants;
 pub mod entities;
 pub mod types;
 pub mod spawning;
-pub mod builders;
 
-use crate::core::builders::ComponentSystemExt;
 use bevy::prelude::*;
-use builders::ComponentBuilderPlugin;
 
 /// Core-specific type registration functionality.
 ///
@@ -32,7 +29,6 @@ pub struct CorePlugin;
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins(ComponentBuilderPlugin)
             .register_core_types()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);

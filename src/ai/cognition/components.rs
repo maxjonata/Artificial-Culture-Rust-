@@ -1,6 +1,21 @@
 use crate::core::types::Normalized;
 use bevy::prelude::{App, Component, Plugin, Reflect, ReflectComponent};
 
+pub enum PersonalityDimension {
+    Openness,
+    Conscientiousness,
+    Extraversion,
+    Agreeableness,
+    Neuroticism,
+}
+
+pub enum RoleAffinity {
+    LeadershipTendency,
+    CooperationDrive,
+    ExplorationUrge,
+    ProtectionInstinct,
+}
+
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 struct PersonalityVector {

@@ -13,6 +13,8 @@ Agent-based AI simulation creating believable NPCs through emergent social dynam
 - [x] **1.1.3** Implement conversion utilities between u8 (0-255) and f32 (0.0-1.0)
 - [x] **1.1.4** Add runtime validation for normalized ranges in debug and release builds
 - [x] **1.2.1** Create `assert_range` utility for value validation
+- [x] **1.2.2** Implement `NormalizedBuilder` for custom min/max ranges with flexible configuration
+- [x] **1.2.3** Create `Severity` type for [-1.0, 1.0] range representing bipolar measurements
 - [x] **1.3.1** Create master `AiPlugin` coordinator in `src/ai/mod.rs`
 - [x] **1.3.2** Set up domain plugin structure: Physiology, Cognition, Social, Perception, Environment
 - [x] **1.3.3** Implement plugin dependency management and loading order **(factories pattern)**
@@ -418,4 +420,3 @@ Agent-based AI simulation creating believable NPCs through emergent social dynam
 - [ ] Collective behaviors emerge from individual rules
 - [ ] Social conflicts arise from believable causes
 - [ ] Agents develop unique "personalities" over time
-

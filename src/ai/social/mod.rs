@@ -1,3 +1,5 @@
+pub mod components;
+
 use bevy::prelude::*;
 
 /// Social cognition, relationships, and group dynamics for interpersonal behavior.
@@ -6,7 +8,6 @@ use bevy::prelude::*;
 pub struct AiSocialPlugin;
 
 impl Plugin for AiSocialPlugin {
-
     fn build(&self, app: &mut App) {
         // TODO: Add domain-specific AI plugins as they are implemented
         // Future systems to be added:
@@ -18,5 +19,7 @@ impl Plugin for AiSocialPlugin {
         // - Emotional contagion system
         // - Social memory system
         // - Cooperation and reciprocity system
+        app
+            .add_plugins(components::SocialComponentsPlugin);
     }
 }

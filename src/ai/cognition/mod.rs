@@ -1,4 +1,6 @@
 mod components;
+mod systems;
+mod events;
 
 use bevy::prelude::*;
 

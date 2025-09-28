@@ -14,9 +14,9 @@ impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app
             // Add debug UI for agent state inspection
-            .add_plugins(profiler::             ProfilerPlugin)
-            .add_plugins(debug_ui::             DebugUiPlugin)
-            .add_plugins(performance_alerts::   PerformanceAlertsPlugin)
+            .add_plugins(profiler::ProfilerPlugin)
+            .add_plugins(debug_ui::DebugUiPlugin)
+            .add_plugins(performance_alerts::PerformanceAlertsPlugin)
             .add_plugins(RapierDebugRenderPlugin::default())
             .add_systems(
                 Startup, setup_camera_and_background,
