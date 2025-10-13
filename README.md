@@ -83,13 +83,14 @@ built on this solid foundation with strict separation between current and histor
 
 **Foundation Phase Complete**: Type-safe architecture with `Normalized` wrapper system and comprehensive plugin structure.
 
-**Current Focus**: Milestone 1 (Expressive Agent) implementation:
+**Current Status**: Foundation phase with critical gaps identified:
 
-- ✅ **Type-Safe Foundation**: `Normalized` wrapper prevents invalid states, replaces manual validation
-- ✅ **Plugin Architecture**: Domain-based plugins (cognition, perception, physiology, social) with comprehensive documentation
-- ✅ **Test Infrastructure**: Organized test suite in `src/tests/` with 12 passing tests
-- 🔄 **Expression Mapping**: Map physiological + internal modulators ➜ outward expression vector
-- 🔄 **Perception Pipeline**: Implement attention-weighted, noisy perception with biased reconstruction
+- ✅ **Type-Safe Foundation**: `Normalized` wrapper prevents invalid states, comprehensive arithmetic operations
+- ✅ **Plugin Architecture**: Domain-based plugins (AI, Core, World, Presentation) with proper separation
+- ✅ **Debug Infrastructure**: bevy_inspector_egui integration and performance monitoring systems
+- ⚠️ **Missing Core Systems**: WorldTime, functional entity spawning, AI system implementations
+- ⚠️ **Unused Components**: PersonalityVector, social components exist but aren't integrated
+- 🔄 **Next Priority**: Implement WorldTime resource and fix entity spawning system
 
 ---
 
@@ -143,12 +144,20 @@ src/
       types.rs               # Normalized type tests (12 tests passing)
 Docs/
   Fundaments/              # ✅ PRIMARY SOURCES (authoritative)
-    Artificial Society_... # Main specification
-    DETAILED_ROADMAP.md    # Implementation roadmap
+    Tech Phylosophy Spec.md # Main technical and philosophical specification
+    Tech Paper Spec.md     # Technical paper specification
+    Roadmap from Spec.md   # Implementation roadmap
+  Backstory/               # ⚠️ HISTORICAL (reference only)
+    DETAILED_ROADMAP.md    # Legacy detailed roadmap
+    components.md          # Historical ECS design
+    systems.md             # Legacy system architecture
+    neurological.md        # Historical research notes
+    psychological.md       # Historical research notes
+    sociological.md        # Historical research notes
   Structures/              # ⚠️ HISTORICAL (reference only)
-  Flows/                   # ⚠️ HISTORICAL (reference only)
+    normalized_type_guide.md # Type system implementation guide
+  Flows/                   # ⚠️ HISTORICAL (reference only - empty)
   Papers/                  # ✅ RESEARCH SOURCES (parameter values)
-  normalized_type_guide.md # ✅ CURRENT implementation guide
 ```
 
 ---
@@ -209,7 +218,7 @@ Docs/
 - [utils/helpers](src/utils/helpers): Directory containing generic helper modules.
 - [utils/macros](src/utils/macros): Type registration macros (deprecated `clamped_setters!` removed).
 
-### Tests (NEW)
+### Tests
 
 - [tests/mod.rs](src/tests/mod.rs): Test module organization by domain.
 - [tests/core/types.rs](src/tests/core/types.rs): Comprehensive `Normalized` type tests (12 tests passing).
@@ -234,16 +243,18 @@ Docs/
 
 ## Milestone Roadmap
 
-| Milestone                  | Focus                                  | Proof Artifact                                       | Status      |
+| Phase                      | Focus                                  | Key Deliverables                                     | Status      |
 |----------------------------|----------------------------------------|------------------------------------------------------|-------------|
-| **Foundation**             | **Type-safe architecture & plugins**  | **Normalized wrapper + comprehensive tests**         | **✅ Complete** |
-| 1 Expressive Agent         | Internal ➜ outward expression mapping  | Physiological gradients modulate expression vector   | 🔄 In Progress |
-| 2 Subjective Observer      | Distorted perception + biased beliefs  | Agent misinterprets another, drives altered response | Pending     |
-| 3 Persistent Social Memory | Relationship drift + confirmation bias | Early misread persists & shapes future               | Planned     |
-| 4 Goal-Oriented Behavior   | Utility / multi-step strategy          | Sequenced intent generation & execution              | Future      |
-| 5 Group Dynamics           | Factional / norm emergence             | Clustering of aligned reputational vectors           | Future      |
-| 6 Scale & Optimization     | 100+ agents @ 60 FPS                   | Profiling & perf reports                             | Future      |
-| 7 Network Integration      | SpaceTimeDB + zone workers             | Persisted cross-zone social state                    | Future      |
+| **Phase 1: Foundation**    | **Core infrastructure & WorldTime**   | **WorldTime resource, entity spawning, type system** | **⚠️ Partial** |
+| **Phase 2: Physiological** | **Needs, stress, energy systems**     | **Basic biological drives and mood integration**     | **❌ Not Started** |
+| **Phase 3: Performance**   | **Memory optimization, parallel processing** | **60fps with 100+ agents, LOD system**        | **❌ Not Started** |
+| **Phase 4: Cognitive**     | **Decision-making, memory, learning** | **Personality-driven behavior, dual-process cognition** | **❌ Not Started** |
+| **Phase 5: Social**        | **"Plato's Cave" communication**      | **Four-layer pipeline, believable misunderstandings** | **❌ Not Started** |
+| **Phase 6: Social Dynamics** | **Relationships, group formation**   | **Emergent social behaviors, reputation systems**   | **❌ Not Started** |
+| **Phase 7: Testing**       | **Behavioral validation, drift detection** | **"Social Turing Test" achievement**          | **❌ Not Started** |
+| **Phase 8: Configuration** | **Runtime tuning, A/B testing**       | **Parameter optimization, scenario templates**      | **❌ Not Started** |
+| **Phase 9: Persistence**   | **Cross-server sync, data integrity** | **World persistence, agent migration**              | **❌ Not Started** |
+| **Phase 10: Production**   | **Master integration, deployment**    | **Production-ready AI society simulation**          | **❌ Not Started** |
 
 Detailed acceptance criteria: see spec sections on milestones.
 
@@ -251,27 +262,35 @@ Detailed acceptance criteria: see spec sections on milestones.
 
 ## Prototype Features
 
-**✅ Foundation Complete:**
+**✅ Currently Working:**
 
-- **Type-Safe Architecture**: `Normalized` wrapper prevents invalid states (12 comprehensive tests)
-- **Plugin System**: Domain-based plugins (cognition, perception, physiology, social) with comprehensive documentation
-- **Test Infrastructure**: Organized test suite in `src/tests/` with clear domain separation
-- **Documentation Hierarchy**: Clear separation between current specification and historical approaches
-- Bevy ECS foundation (0.16.1) + dynamic linking
-- Agent spawning & rudimentary movement
-- Inspector-driven live tuning (`bevy_inspector_egui`)
+- **Type-Safe Foundation**: `Normalized` wrapper with comprehensive arithmetic operations and validation
+- **Plugin Architecture**: Domain-based structure (AI, Core, World, Presentation) with proper separation
+- **Debug Infrastructure**: bevy_inspector_egui integration and performance monitoring systems
+- **Physics Integration**: Rapier2D physics system with environment management
+- **Project Structure**: Proper Rust project setup with comprehensive type safety
 
-**🔄 Current Development:**
+**⚠️ Critical Issues:**
 
-- Expression ➜ perception distortion pipeline implementation
-- Physiological needs integration with `Normalized` values
-- Event-driven system architecture refinement
+- **Non-functional Entity Spawning**: Current spawning system is completely commented out
+- **Empty AI Systems**: All AI domain plugins are skeleton implementations with no functionality
+- **Missing WorldTime**: No temporal coordination system for time scaling and consistency
+- **Unused Components**: PersonalityVector and social components exist but aren't integrated
+
+**🔄 Immediate Development Priorities:**
+
+1. **Implement WorldTime resource** with time scaling support (1x to 1000x speed)
+2. **Fix entity spawning system** to create functional agents with proper components
+3. **Create basic Needs component** with hunger, energy, safety, social needs
+4. **Connect personality system** to actual behavioral modulation
+5. **Follow Master Implementation Plan** for systematic development
 
 **🔮 Future Development:**
-- Reputation modeling with `Normalized` trust values
-- Cultural drift through social learning
-- ML observation export with type-safe vectors
-- SpaceTimeDB integration for persistence
+- Complete physiological foundation (needs, stress, energy, mood)
+- Implement cognitive architecture (decision-making, memory, learning)
+- Build "Plato's Cave" social communication pipeline
+- Add performance optimization for 100+ agents at 60fps
+- Create behavioral validation and "Social Turing Test" achievement
 
 ---
 
@@ -321,6 +340,14 @@ cd Artificial-Culture-Rust-
 cargo run --release
 ```
 
+**⚠️ Current State**: The application will run but no agents will spawn (spawning system is commented out). You'll see:
+- Empty world with physics environment
+- Debug UI (bevy_inspector_egui) for component inspection
+- Performance monitoring systems
+- Plugin architecture loading correctly
+
+**Next Steps**: Follow the [Master Implementation Plan](.kiro/specs/master-implementation-plan.md) to implement missing systems.
+
 Use `--release` for stable frame pacing. If dynamic linking issues arise on your platform, remove the `dynamic_linking`
 feature in `Cargo.toml` and rebuild.
 
@@ -328,13 +355,26 @@ feature in `Cargo.toml` and rebuild.
 
 ## Runtime Usage
 
-Current prototype: spawns agents; early interaction visualization. Expect rapid iteration & breaking API changes.
+**Current State**: Foundation systems only - no agents spawn yet.
 
-Quick Notes:
+**What Works:**
+- Debug UI (EGUI) for component inspection
+- Performance monitoring and alerting systems
+- Physics environment with Rapier2D integration
+- Plugin architecture loading and coordination
 
-- Toggle inspector (EGUI) to inspect and tweak numeric component fields.
-- Observe downstream propagation (e.g., altering needs should eventually affect expression vector once pipeline
-  solidifies).
+**What's Missing:**
+- Agent spawning (system is commented out)
+- AI behaviors (all domain plugins are empty)
+- WorldTime resource for temporal coordination
+- Functional personality and needs systems
+
+**Development Workflow:**
+1. Use the debug UI to inspect existing components
+2. Follow the [Master Implementation Plan](.kiro/specs/master-implementation-plan.md) for systematic development
+3. Implement WorldTime resource first (enables all other systems)
+4. Fix entity spawning to create functional agents
+5. Add basic physiological systems (needs, stress, mood)
 
 ---
 
@@ -343,17 +383,20 @@ Quick Notes:
 **⚠️ IMPORTANT: Documentation Hierarchy**
 
 **PRIMARY SOURCES (Authoritative for Current Development):**
-- **Main Specification**: `Docs/Fundaments/Artificial Society_ Complete Technical and Philosophical Specification.md`
-- **Implementation Roadmap**: `Docs/Fundaments/DETAILED_ROADMAP.md`
-- **Game Design Document**: Based on the above two files (when created)
+- **Main Specification**: `Docs/Fundaments/Tech Phylosophy Spec.md` - Core technical and philosophical specification
+- **Technical Paper**: `Docs/Fundaments/Tech Paper Spec.md` - Technical implementation specification
+- **Implementation Roadmap**: `Docs/Fundaments/Roadmap from Spec.md` - Current implementation roadmap
+- **Master Implementation Plan**: `.kiro/specs/master-implementation-plan.md` - Unified task coordination
 
 **RESEARCH SOURCES (For Parameter Values & Design Inspiration):**
 - **Academic Papers**: `Docs/Papers/` - Use for realistic parameter values and behavioral patterns, NOT for achieving scientific perfection
 
 **HISTORICAL/BACKSTORY DOCUMENTATION (Reference Only - Not for Current Development):**
-- ECS Structures: `Docs/Structures/` - **Historical approaches, superseded by main specification**
-- Flows & Roadmap: `Docs/Flows/` - **Legacy planning documents, superseded by main specification**
-- Theoretical Grounding: `Docs/Fundaments/neurological.md`, `psychological.md`, `sociological.md` - **Historical research notes**
+- **Legacy Roadmap**: `Docs/Backstory/DETAILED_ROADMAP.md` - Historical detailed roadmap
+- **ECS Structures**: `Docs/Backstory/components.md`, `systems.md` - Historical ECS design approaches
+- **Research Notes**: `Docs/Backstory/neurological.md`, `psychological.md`, `sociological.md` - Historical research notes
+- **Type Guide**: `Docs/Structures/normalized_type_guide.md` - Type system implementation guide
+- **Flows**: `Docs/Flows/` - Legacy planning documents (empty)
 
 **⚠️ AI Development Notice**: AI assistants should ONLY use the Primary Sources for current development guidance. All other documentation represents historical approaches and lessons learned, preserved for reference but not for active development.
 
@@ -411,23 +454,65 @@ for alignment with project philosophy & data-oriented constraints.
 
 ---
 
-## Status Snapshot
+## 🔍 Current Implementation Status
 
-**Foundation Phase Complete**: Type-safe `Normalized` wrapper system, comprehensive domain plugin architecture, and
-organized test infrastructure established. Building expression + subjective perception layers on this solid foundation.
-Current focus: implementing physiological expression mapping with type-safe values.
+### ✅ **Foundation Complete**
+- **Core Type System**: `Normalized<f32>` and `Severity` types with full arithmetic operations
+- **Plugin Architecture**: Domain-separated structure (AI, Core, World, Presentation)
+- **Debug Infrastructure**: bevy_inspector_egui integration and performance monitoring
+- **Physics Integration**: Rapier2D physics system with environment management
+- **Project Structure**: Proper Rust project with comprehensive type safety
+
+### ⚠️ **Critical Gaps Identified**
+- **WorldTime Resource**: Missing - required for temporal consistency across all systems
+- **Entity Spawning**: Current spawning system is commented out and non-functional
+- **AI System Implementation**: All AI domains are skeleton plugins with no functionality
+- **Component Integration**: PersonalityVector exists but isn't used in any systems
+
+### 🚧 **Major Missing Systems**
+- **No Physiological Systems**: Needs, stress, energy systems missing
+- **No Cognitive Systems**: Decision-making, memory, learning missing  
+- **No Social Systems**: Communication pipeline completely missing
+- **No Performance Optimization**: LOD, parallel processing not implemented
+- **No Testing Framework**: Behavioral validation systems missing
+
+### 🎯 **Immediate Action Required**
+1. **Implement WorldTime resource** (enables all temporal systems)
+2. **Fix entity spawning system** (enables agent creation)
+3. **Implement basic Needs component** (enables physiological foundation)
+4. **Create functional personality system** (enables behavioral differences)
+
+### 🔧 **Code Issues to Fix**
+- **Cargo.toml**: Package name should be snake_case (`artificial_culture_rust`)
+- **Unused Components**: PersonalityVector, RoleAffinities, AgentEvent not used anywhere
+- **Spawning System**: All entity creation code is commented out
+- **AI Plugins**: All AI domain plugins are empty skeletons
+- **Missing Dependencies**: Need to add WorldTime, temporal systems
+- **Type Usage**: Severity type implemented but never used
+
+---
+
+## 📋 **Master Implementation Plan**
+
+A comprehensive [Master Implementation Plan](.kiro/specs/master-implementation-plan.md) has been created that:
+- **Coordinates all 9 spec domains** into a unified roadmap
+- **Shows current implementation status** with clear progress indicators
+- **Provides dependency-ordered phases** for systematic development
+- **Includes success metrics** for each development phase
+- **Offers flexible timeline** focused on quality over speed
+
+**Current Phase**: Phase 1 - Foundation Systems (Core Infrastructure)
+**Next Phase**: Phase 2 - Physiological Foundation (Biological Simulation Layer)
 
 ---
 
 ## Immediate Next Steps
 
-1. **✅ COMPLETE**: Type-safe `Normalized` wrapper with comprehensive tests (12 tests passing)
-2. **✅ COMPLETE**: Domain plugin architecture with comprehensive documentation
-3. **✅ COMPLETE**: Test infrastructure organized in `src/tests/` by domain
-4. **✅ COMPLETE**: Documentation hierarchy with clear current vs. historical separation
-5. **🔄 IN PROGRESS**: Implement `Needs` ➜ expression modulation mapping using `Normalized` values
-6. **NEXT**: Attention-based perceptual filtering + distortion injection (Milestone 2 kickoff)
-7. **PLANNED**: Generalize legacy rumor logic into unified social communication events
+1. **🔄 PRIORITY**: Implement WorldTime resource with time scaling support
+2. **🔄 PRIORITY**: Fix entity spawning system to create functional agents
+3. **🔄 PRIORITY**: Create basic Needs component with decay systems
+4. **🔄 PRIORITY**: Connect existing PersonalityVector to actual behavior systems
+5. **📋 PLANNED**: Follow Master Implementation Plan phases for systematic development
 
 ---
 
