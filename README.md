@@ -483,7 +483,6 @@ for alignment with project philosophy & data-oriented constraints.
 4. **Create functional personality system** (enables behavioral differences)
 
 ### 🔧 **Code Issues to Fix**
-- **Cargo.toml**: Package name should be snake_case (`artificial_culture_rust`)
 - **Unused Components**: PersonalityVector, RoleAffinities, AgentEvent not used anywhere
 - **Spawning System**: All entity creation code is commented out
 - **AI Plugins**: All AI domain plugins are empty skeletons

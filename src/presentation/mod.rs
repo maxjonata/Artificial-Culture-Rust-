@@ -2,6 +2,9 @@
 
 mod profiler;
 pub mod performance_alerts;
+pub mod system_profiler;
+pub mod profiling_examples;
+mod profiler_controls;
 mod debug_ui;
 
 use bevy::prelude::*;
@@ -17,10 +20,14 @@ impl Plugin for PresentationPlugin {
             .add_plugins(profiler::ProfilerPlugin)
             .add_plugins(debug_ui::DebugUiPlugin)
             .add_plugins(performance_alerts::PerformanceAlertsPlugin)
+            .add_plugins(system_profiler::SystemProfilerPlugin)
+            .add_plugins(profiler_controls::ProfilerControlsPlugin)
             .add_plugins(RapierDebugRenderPlugin::default())
             .add_systems(
                 Startup, setup_camera_and_background,
             );
+
+        // Profiling examples are now in tests, not in the main app
     }
 }
 
