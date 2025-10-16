@@ -1,8 +1,8 @@
 //! Environment management for the Artificial Society.
 //! Provides 2D top-down environment with physics, boundaries, and features.
 
-mod components;
 mod bundles;
+mod components;
 mod factories;
 mod helpers;
 mod systems;
@@ -20,10 +20,13 @@ impl Plugin for EnvironmentPlugin {
             .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
             .add_plugins(RegisterEnvironmentComponentsPlugin)
             // Systems
-            .add_systems(Startup, (
-                systems::configure_physics_system,
-                systems::create_empty_room_system,
-            ))
+            .add_systems(
+                Startup,
+                (
+                    systems::configure_physics_system,
+                    systems::create_empty_room_system,
+                ),
+            )
             .add_systems(Update, systems::update_png_colliders_system);
 
         // Alternative environments (comment/uncomment as needed):

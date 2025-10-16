@@ -34,8 +34,13 @@ pub enum ColliderType {
 /// Wall generation patterns.
 #[derive(Debug, Clone, Reflect)]
 pub enum WallPattern {
-    Random { count: u32, length_range: (f32, f32) },
-    Labyrinth { cell_size: f32 },
+    Random {
+        count: u32,
+        length_range: (f32, f32),
+    },
+    Labyrinth {
+        cell_size: f32,
+    },
 }
 
 impl Default for WallPattern {
@@ -51,8 +56,7 @@ pub struct RegisterEnvironmentComponentsPlugin;
 
 impl Plugin for RegisterEnvironmentComponentsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .register_type::<EnvironmentBounds>()
+        app.register_type::<EnvironmentBounds>()
             .register_type::<EnvironmentFeature>()
             .register_type::<WallGenerator>()
             .register_type::<ColliderType>()

@@ -21,5 +21,4 @@ pub fn configure_physics_system() {
     // Rapier physics is configured with pixels_per_meter in the plugin
     // Gravity can be disabled by setting RigidBody::Dynamic with damping
     // or by using RigidBody::KinematicVelocityBased for controlled movement
-
 }

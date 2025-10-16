@@ -9,7 +9,6 @@ use bevy::prelude::{Entity, Event};
 //  Calculate role affinity changes based on successful/failed leadership attempts.
 // Outputs: Modified PersonalityVector, updated RoleAffinities, PersonalityShiftEvent
 
-
 #[derive(Event)]
 pub struct StressThresholdCrossed {
     entity: Entity,

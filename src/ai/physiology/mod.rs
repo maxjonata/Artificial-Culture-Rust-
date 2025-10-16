@@ -6,7 +6,6 @@ use bevy::prelude::*;
 pub struct AiPhysiologyPlugin;
 
 impl Plugin for AiPhysiologyPlugin {
-
     fn build(&self, app: &mut App) {
         // TODO: Add domain-specific AI plugins as they are implemented
         // Future systems to be added:

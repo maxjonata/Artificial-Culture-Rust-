@@ -113,15 +113,16 @@ impl NormalizedBuilder {
     /// Builds a clamped f32 value with the configured ranges.
     #[inline]
     pub fn build(self, value: f32) -> f32 {
-        let normalized_value = if let (Some(input_min), Some(input_max)) = (self.input_min, self.input_max) {
-            // Convert from input range to output range
-            let input_range = input_max - input_min;
-            let output_range = self.output_max - self.output_min;
-            let normalized = (value - input_min) / input_range;
-            self.output_min + normalized * output_range
-        } else {
-            value
-        };
+        let normalized_value =
+            if let (Some(input_min), Some(input_max)) = (self.input_min, self.input_max) {
+                // Convert from input range to output range
+                let input_range = input_max - input_min;
+                let output_range = self.output_max - self.output_min;
+                let normalized = (value - input_min) / input_range;
+                self.output_min + normalized * output_range
+            } else {
+                value
+            };
 
         normalized_value.clamp(self.output_min, self.output_max)
     }
@@ -408,7 +409,11 @@ impl Normalized {
         if RangeInclusive::new(0.0, 1.0).contains(&value) {
             Ok(Self(value))
         } else {
-            Err(NormalizedError::OutOfRange { value, min: 0.0, max: 1.0 })
+            Err(NormalizedError::OutOfRange {
+                value,
+                min: 0.0,
+                max: 1.0,
+            })
         }
     }
 
@@ -513,12 +518,13 @@ impl Normalized {
     where
         T: PartialOrd + std::fmt::Display + Copy,
     {
-        assert!(range.contains(&value),
-                "{} must be in range [{}, {}], got: {}",
-                name,
-                range.start(),
-                range.end(),
-                value
+        assert!(
+            range.contains(&value),
+            "{} must be in range [{}, {}], got: {}",
+            name,
+            range.start(),
+            range.end(),
+            value
         );
         true
     }
@@ -607,7 +613,11 @@ impl Severity {
         if RangeInclusive::new(-1.0, 1.0).contains(&value) {
             Ok(Self(value))
         } else {
-            Err(NormalizedError::OutOfRange { value, min: -1.0, max: 1.0 })
+            Err(NormalizedError::OutOfRange {
+                value,
+                min: -1.0,
+                max: 1.0,
+            })
         }
     }
 

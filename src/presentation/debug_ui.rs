@@ -26,13 +26,17 @@ impl Default for DebugUiConfig {
 }
 
 /// Toggle debug UI visibility
-pub fn toggle_debug_ui(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut config: ResMut<DebugUiConfig>,
-) {
+pub fn toggle_debug_ui(keyboard: Res<ButtonInput<KeyCode>>, mut config: ResMut<DebugUiConfig>) {
     if keyboard.just_pressed(KeyCode::F1) {
         config.show_world_inspector = !config.show_world_inspector;
-        info!("Debug UI toggled: {}", if config.show_world_inspector { "ON" } else { "OFF" });
+        info!(
+            "Debug UI toggled: {}",
+            if config.show_world_inspector {
+                "ON"
+            } else {
+                "OFF"
+            }
+        );
     }
 }
 
@@ -40,11 +44,10 @@ pub struct DebugUiPlugin;
 
 impl Plugin for DebugUiPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(EguiPlugin::default())
+        app.add_plugins(EguiPlugin::default())
             .init_resource::<DebugUiConfig>()
             .add_systems(Update, toggle_debug_ui);
-        
+
         // Only add WorldInspectorPlugin in debug builds to reduce overhead
         #[cfg(debug_assertions)]
         app.add_plugins(WorldInspectorPlugin::default());

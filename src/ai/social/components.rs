@@ -11,7 +11,6 @@ pub struct SocialComponentsPlugin;
 
 impl Plugin for SocialComponentsPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app
-            .register_type::<AgentEvent>();
+        app.register_type::<AgentEvent>();
     }
 }

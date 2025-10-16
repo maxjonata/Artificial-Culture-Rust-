@@ -6,7 +6,6 @@ use bevy::prelude::*;
 pub struct AiPerceptionPlugin;
 
 impl Plugin for AiPerceptionPlugin {
-
     fn build(&self, app: &mut App) {
         // TODO: Add domain-specific AI plugins as they are implemented
         // Future systems to be added:

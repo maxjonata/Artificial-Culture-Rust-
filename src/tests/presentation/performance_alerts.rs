@@ -6,16 +6,15 @@
 use bevy::prelude::*;
 
 use crate::presentation::performance_alerts::{
-    PerformanceAlert, PerformanceAlertsPlugin, PerformanceMonitorConfig,
-    PerformanceMonitorState
+    PerformanceAlert, PerformanceAlertsPlugin, PerformanceMonitorConfig, PerformanceMonitorState,
 };
 
 /// Test helper to create a minimal Bevy app with performance monitoring
 fn create_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-       .add_plugins(bevy::diagnostic::DiagnosticsPlugin)
-       .add_plugins(PerformanceAlertsPlugin);
+        .add_plugins(bevy::diagnostic::DiagnosticsPlugin)
+        .add_plugins(PerformanceAlertsPlugin);
     app
 }
 
@@ -23,9 +22,9 @@ fn create_test_app() -> App {
 fn create_test_app_with_config(config: PerformanceMonitorConfig) -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-       .add_plugins(bevy::diagnostic::DiagnosticsPlugin)
-       .add_plugins(PerformanceAlertsPlugin)
-       .insert_resource(config);
+        .add_plugins(bevy::diagnostic::DiagnosticsPlugin)
+        .add_plugins(PerformanceAlertsPlugin)
+        .insert_resource(config);
     app
 }
 

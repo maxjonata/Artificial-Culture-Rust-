@@ -1,10 +1,15 @@
-use crate::world::environment::bundles::{EnvironmentBoundsBundle, EnvironmentFeatureBundle, WallBundle};
+use crate::world::environment::bundles::{
+    EnvironmentBoundsBundle, EnvironmentFeatureBundle, WallBundle,
+};
 use crate::world::environment::components::{ColliderType, EnvironmentBounds, EnvironmentFeature};
 use crate::world::environment::helpers;
 use bevy::asset::AssetServer;
 use bevy::log::info;
 use bevy::math::{Quat, Vec2};
-use bevy::prelude::{default, Commands, Entity, GlobalTransform, InheritedVisibility, Res, Sprite, Transform, ViewVisibility, Visibility};
+use bevy::prelude::{
+    Commands, Entity, GlobalTransform, InheritedVisibility, Res, Sprite, Transform, ViewVisibility,
+    Visibility, default,
+};
 use bevy_rapier2d::dynamics::RigidBody;
 use bevy_rapier2d::geometry::{Collider, Sensor};
 use rand::prelude::StdRng;
@@ -15,29 +20,43 @@ pub fn spawn_bounds(commands: &mut Commands, size: Vec2, wall_thickness: f32) ->
     let half_size = size * 0.5;
     let half_thickness = wall_thickness * 0.5;
 
-    commands.spawn(EnvironmentBoundsBundle {
-        bounds: EnvironmentBounds {
-            size,
-            wall_thickness,
-        },
-        transform: Transform::default(),
-        global_transform: GlobalTransform::default(),
-        rigid_body: RigidBody::Fixed,
-        collider: Collider::compound(vec![
-            // Top wall
-            (Vec2::new(0.0, half_size.y + half_thickness), 0.0,
-             Collider::cuboid(half_size.x + wall_thickness, half_thickness)),
-            // Bottom wall
-            (Vec2::new(0.0, -half_size.y - half_thickness), 0.0,
-             Collider::cuboid(half_size.x + wall_thickness, half_thickness)),
-            // Left wall
-            (Vec2::new(-half_size.x - half_thickness, 0.0), 0.0,
-             Collider::cuboid(half_thickness, half_size.y)),
-            // Right wall
-            (Vec2::new(half_size.x + half_thickness, 0.0), 0.0,
-             Collider::cuboid(half_thickness, half_size.y)),
-        ]),
-    }).id()
+    commands
+        .spawn(EnvironmentBoundsBundle {
+            bounds: EnvironmentBounds {
+                size,
+                wall_thickness,
+            },
+            transform: Transform::default(),
+            global_transform: GlobalTransform::default(),
+            rigid_body: RigidBody::Fixed,
+            collider: Collider::compound(vec![
+                // Top wall
+                (
+                    Vec2::new(0.0, half_size.y + half_thickness),
+                    0.0,
+                    Collider::cuboid(half_size.x + wall_thickness, half_thickness),
+                ),
+                // Bottom wall
+                (
+                    Vec2::new(0.0, -half_size.y - half_thickness),
+                    0.0,
+                    Collider::cuboid(half_size.x + wall_thickness, half_thickness),
+                ),
+                // Left wall
+                (
+                    Vec2::new(-half_size.x - half_thickness, 0.0),
+                    0.0,
+                    Collider::cuboid(half_thickness, half_size.y),
+                ),
+                // Right wall
+                (
+                    Vec2::new(half_size.x + half_thickness, 0.0),
+                    0.0,
+                    Collider::cuboid(half_thickness, half_size.y),
+                ),
+            ]),
+        })
+        .id()
 }
 
 /// Spawn PNG-based environment feature.
@@ -111,12 +130,7 @@ pub fn spawn_random_walls(
 }
 
 /// Generate simple labyrinth with recursive backtracking.
-pub fn spawn_labyrinth(
-    commands: &mut Commands,
-    bounds: Vec2,
-    cell_size: f32,
-    seed: u64,
-) {
+pub fn spawn_labyrinth(commands: &mut Commands, bounds: Vec2, cell_size: f32, seed: u64) {
     let grid_width = (bounds.x / cell_size) as usize;
     let grid_height = (bounds.y / cell_size) as usize;
 
@@ -133,10 +147,7 @@ pub fn spawn_labyrinth(
 }
 
 /// Create obstacle course with random walls and features.
-pub fn create_obstacle_course_system(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+pub fn create_obstacle_course_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_bounds(&mut commands, Vec2::new(600.0, 400.0), 5.0);
     spawn_random_walls(&mut commands, Vec2::new(600.0, 400.0), 15, (30.0, 80.0), 42);
 

@@ -3,6 +3,7 @@
 //! Reference: Multi-agent systems theory, Bevy ECS patterns.
 
 pub mod ai;
+pub mod cicd;
 pub mod core;
 pub mod presentation;
 

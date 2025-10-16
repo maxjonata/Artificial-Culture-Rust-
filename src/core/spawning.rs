@@ -3,7 +3,6 @@
 use bevy::prelude::*;
 use rand::prelude::*;
 
-
 pub fn spawn_npcs_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,

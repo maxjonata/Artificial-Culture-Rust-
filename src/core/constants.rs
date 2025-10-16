@@ -30,7 +30,6 @@ pub struct GameConstants {
 }
 
 impl Default for GameConstants {
-
     fn default() -> Self {
         Self {
             num_npcs: 1,

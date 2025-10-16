@@ -1,7 +1,7 @@
 pub mod constants;
 pub mod entities;
-pub mod types;
 pub mod spawning;
+pub mod types;
 
 use bevy::prelude::*;
 
@@ -28,8 +28,7 @@ pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .register_core_types()
+        app.register_core_types()
             .init_resource::<constants::GameConstants>()
             .add_systems(Startup, spawning::spawn_npcs_system);
     }
