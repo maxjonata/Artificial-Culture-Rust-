@@ -27,10 +27,11 @@ pub struct GameConstants {
 
     pub target_frame_time_ms: f32,
     pub max_agents_per_worker: u16,
+
+    pub time_speed: f32,
 }
 
 impl Default for GameConstants {
-
     fn default() -> Self {
         Self {
             num_npcs: 1,
@@ -52,6 +53,8 @@ impl Default for GameConstants {
 
             target_frame_time_ms: 16.67,
             max_agents_per_worker: 1000,
+
+            time_speed: 1.0,
         }
     }
 }
