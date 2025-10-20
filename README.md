@@ -88,9 +88,8 @@ built on this solid foundation with strict separation between current and histor
 - ✅ **Type-Safe Foundation**: `Normalized` wrapper prevents invalid states, comprehensive arithmetic operations
 - ✅ **Plugin Architecture**: Domain-based plugins (AI, Core, World, Presentation) with proper separation
 - ✅ **Debug Infrastructure**: bevy_inspector_egui integration and performance monitoring systems
-- ⚠️ **Missing Core Systems**: WorldTime, functional entity spawning, AI system implementations
+- ⚠️ **Missing Core Systems**: functional entity spawning, AI system implementations
 - ⚠️ **Unused Components**: PersonalityVector, social components exist but aren't integrated
-- 🔄 **Next Priority**: Implement WorldTime resource and fix entity spawning system
 
 ---
 
@@ -137,7 +136,7 @@ src/
     macros/                  # Type registration macros (clamped_setters removed)
   world/
     mod.rs                   # WorldPlugin (planned)
-  tests/                     # ✅ NEW: Organized test structure
+  tests/
     mod.rs                   # Test module declarations
     core/
       mod.rs                 # Core module tests
@@ -274,16 +273,7 @@ Detailed acceptance criteria: see spec sections on milestones.
 
 - **Non-functional Entity Spawning**: Current spawning system is completely commented out
 - **Empty AI Systems**: All AI domain plugins are skeleton implementations with no functionality
-- **Missing WorldTime**: No temporal coordination system for time scaling and consistency
 - **Unused Components**: PersonalityVector and social components exist but aren't integrated
-
-**🔄 Immediate Development Priorities:**
-
-1. **Implement WorldTime resource** with time scaling support (1x to 1000x speed)
-2. **Fix entity spawning system** to create functional agents with proper components
-3. **Create basic Needs component** with hunger, energy, safety, social needs
-4. **Connect personality system** to actual behavioral modulation
-5. **Follow Master Implementation Plan** for systematic development
 
 **🔮 Future Development:**
 - Complete physiological foundation (needs, stress, energy, mood)
@@ -320,13 +310,6 @@ needs.hunger += 2.0;  // Automatically clamped to 1.0
 - **Automatic clamping**: All arithmetic operations maintain bounds
 - **Bevy integration**: Full Component and Reflect support
 - **Comprehensive tests**: 12 tests covering all operations
-
-### Removed Deprecated Code
-
-- ❌ **`clamped_setters!` macro**: Replaced by type-safe `Normalized` fields
-- ❌ **Manual validation utilities**: `quantized_to_float`, `float_to_quantized` (now type methods)
-- ❌ **Legacy utility functions**: Replaced by `Normalized` arithmetic operations
-- ✅ **Kept validation macros**: For testing and external input validation
 
 ---
 
@@ -366,7 +349,6 @@ feature in `Cargo.toml` and rebuild.
 **What's Missing:**
 - Agent spawning (system is commented out)
 - AI behaviors (all domain plugins are empty)
-- WorldTime resource for temporal coordination
 - Functional personality and needs systems
 
 **Development Workflow:**
@@ -464,20 +446,18 @@ for alignment with project philosophy & data-oriented constraints.
 - **Project Structure**: Proper Rust project with comprehensive type safety
 
 ### ⚠️ **Critical Gaps Identified**
-- **WorldTime Resource**: Missing - required for temporal consistency across all systems
 - **Entity Spawning**: Current spawning system is commented out and non-functional
 - **AI System Implementation**: All AI domains are skeleton plugins with no functionality
 - **Component Integration**: PersonalityVector exists but isn't used in any systems
 
 ### 🚧 **Major Missing Systems**
 - **No Physiological Systems**: Needs, stress, energy systems missing
-- **No Cognitive Systems**: Decision-making, memory, learning missing  
+- **No Cognitive Systems**: Decision-making, memory, learning missing
 - **No Social Systems**: Communication pipeline completely missing
 - **No Performance Optimization**: LOD, parallel processing not implemented
 - **No Testing Framework**: Behavioral validation systems missing
 
 ### 🎯 **Immediate Action Required**
-1. **Implement WorldTime resource** (enables all temporal systems)
 2. **Fix entity spawning system** (enables agent creation)
 3. **Implement basic Needs component** (enables physiological foundation)
 4. **Create functional personality system** (enables behavioral differences)
@@ -486,7 +466,6 @@ for alignment with project philosophy & data-oriented constraints.
 - **Unused Components**: PersonalityVector, RoleAffinities, AgentEvent not used anywhere
 - **Spawning System**: All entity creation code is commented out
 - **AI Plugins**: All AI domain plugins are empty skeletons
-- **Missing Dependencies**: Need to add WorldTime, temporal systems
 - **Type Usage**: Severity type implemented but never used
 
 ---
@@ -507,7 +486,6 @@ A comprehensive [Master Implementation Plan](.kiro/specs/master-implementation-p
 
 ## Immediate Next Steps
 
-1. **🔄 PRIORITY**: Implement WorldTime resource with time scaling support
 2. **🔄 PRIORITY**: Fix entity spawning system to create functional agents
 3. **🔄 PRIORITY**: Create basic Needs component with decay systems
 4. **🔄 PRIORITY**: Connect existing PersonalityVector to actual behavior systems
