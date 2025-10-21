@@ -1,10 +1,7 @@
 use bevy::image::Image;
 use bevy::math::Vec2;
 use bevy_rapier2d::geometry::Collider;
-use rand::prelude::{
-    IndexedRandom, 
-    StdRng
-};
+use rand::prelude::{IndexedRandom, StdRng};
 use rand::{Rng, SeedableRng};
 
 /// Generate maze walls using recursive backtracking.
@@ -43,16 +40,10 @@ pub fn generate_maze_walls(
 
             // Add walls if at boundary or if neighbor cell is not visited
             if x == 0 {
-                walls.push((
-                    cell_pos,
-                    cell_pos + Vec2::new(0.0, cell_size),
-                ));
+                walls.push((cell_pos, cell_pos + Vec2::new(0.0, cell_size)));
             }
             if y == 0 {
-                walls.push((
-                    cell_pos,
-                    cell_pos + Vec2::new(cell_size, 0.0),
-                ));
+                walls.push((cell_pos, cell_pos + Vec2::new(cell_size, 0.0)));
             }
 
             stack.push((nx, ny));
@@ -89,11 +80,7 @@ fn get_unvisited_neighbors(
 
 /// Generate collider from PNG image data (simplified version).
 /// For now, uses bounding box. Advanced pixel-based collision can be added later.
-pub fn generate_collider_from_png(
-    _image: &Image,
-    scale: Vec2,
-) -> Collider {
+pub fn generate_collider_from_png(_image: &Image, scale: Vec2) -> Collider {
     // Simplified implementation - uses bounding box
     Collider::cuboid(scale.x * 0.5, scale.y * 0.5)
 }
-

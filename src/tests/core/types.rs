@@ -12,7 +12,7 @@ fn test_normalized_construction() {
 fn test_normalized_arithmetic() {
     let a = Normalized::new(0.3);
     let b = Normalized::new(0.8);
-    
+
     assert_eq!((a + b).get(), 1.0); // Clamped to 1.0
     assert_eq!((b - a).get(), 0.5);
     assert!((a * b).get() - 0.24 < 0.001); // Approximately 0.24
@@ -32,7 +32,7 @@ fn test_quantized_conversion() {
     let n = Normalized::new(0.5);
     let quantized = n.to_quantized();
     let back = Normalized::from_quantized(quantized);
-    
+
     // Should be very close (within quantization error)
     assert!((n.get() - back.get()).abs() < 0.01);
 }
@@ -42,13 +42,13 @@ fn test_normalized_assignment_operations() {
     let mut n = Normalized::new(0.3);
     n += 0.2;
     assert_eq!(n.get(), 0.5);
-    
+
     n += 1.0; // Should clamp to 1.0
     assert_eq!(n.get(), 1.0);
-    
+
     n -= 0.5;
     assert_eq!(n.get(), 0.5);
-    
+
     n *= 2.0; // Should clamp to 1.0
     assert_eq!(n.get(), 1.0);
 }
@@ -65,7 +65,7 @@ fn test_normalized_lerp() {
     let a = Normalized::new(0.2);
     let b = Normalized::new(0.8);
     let t = Normalized::new(0.5);
-    
+
     let result = a.lerp(b, t);
     assert_eq!(result.get(), 0.5); // Midpoint between 0.2 and 0.8
 }
@@ -75,7 +75,7 @@ fn test_normalized_clamp() {
     let value = Normalized::new(0.7);
     let min = Normalized::new(0.3);
     let max = Normalized::new(0.6);
-    
+
     let clamped = value.clamp(min, max);
     assert_eq!(clamped.get(), 0.6); // Clamped to max
 }
@@ -100,12 +100,12 @@ fn test_normalized_from_conversions() {
     // From u8
     let from_u8: Normalized = 127u8.into();
     assert!((from_u8.get() - 0.498).abs() < 0.01);
-    
+
     // To f32
     let n = Normalized::new(0.7);
     let as_f32: f32 = n.into();
     assert_eq!(as_f32, 0.7);
-    
+
     // To u8
     let as_u8: u8 = n.into();
     assert_eq!(as_u8, 178); // 0.7 * 255 ≈ 178

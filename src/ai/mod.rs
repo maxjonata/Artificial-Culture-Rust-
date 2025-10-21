@@ -30,12 +30,11 @@ pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins((
-                cognition::AiCognitionPlugin,
-                perception::AiPerceptionPlugin,
-                physiology::AiPhysiologyPlugin,
-                social::AiSocialPlugin,
-            ));
+        app.add_plugins((
+            cognition::AiCognitionPlugin,
+            perception::AiPerceptionPlugin,
+            physiology::AiPhysiologyPlugin,
+            social::AiSocialPlugin,
+        ));
     }
 }

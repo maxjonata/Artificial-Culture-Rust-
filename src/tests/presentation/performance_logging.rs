@@ -5,9 +5,7 @@
 use bevy::prelude::*;
 use serde_json;
 
-use crate::presentation::performance_alerts::{
-    PerformanceAlert, AlertSeverity
-};
+use crate::presentation::performance_alerts::{AlertSeverity, PerformanceAlert};
 
 /// Helper to create a test alert
 fn create_test_alert() -> PerformanceAlert {
@@ -37,9 +35,9 @@ fn test_alert_severity_serialization() {
 
         // Verify round-trip serialization
         match (severity, deserialized.unwrap()) {
-            (AlertSeverity::Warning, AlertSeverity::Warning) => {},
-            (AlertSeverity::Critical, AlertSeverity::Critical) => {},
-            (AlertSeverity::Severe, AlertSeverity::Severe) => {},
+            (AlertSeverity::Warning, AlertSeverity::Warning) => {}
+            (AlertSeverity::Critical, AlertSeverity::Critical) => {}
+            (AlertSeverity::Severe, AlertSeverity::Severe) => {}
             _ => panic!("Severity serialization mismatch"),
         }
     }
@@ -70,13 +68,21 @@ fn test_performance_alert_serialization() {
             duration_ms: 2000,
         },
     ];
-    
+
     for alert in alerts {
         let json_result = serde_json::to_string(&alert);
-        assert!(json_result.is_ok(), "Failed to serialize alert: {:?}", alert);
-        
+        assert!(
+            json_result.is_ok(),
+            "Failed to serialize alert: {:?}",
+            alert
+        );
+
         let json_string = json_result.unwrap();
         let deserialized: Result<PerformanceAlert, _> = serde_json::from_str(&json_string);
-        assert!(deserialized.is_ok(), "Failed to deserialize alert JSON: {}", json_string);
+        assert!(
+            deserialized.is_ok(),
+            "Failed to deserialize alert JSON: {}",
+            json_string
+        );
     }
 }

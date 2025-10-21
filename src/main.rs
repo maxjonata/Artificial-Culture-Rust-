@@ -1,8 +1,8 @@
 //! Minimal bootstrap after cleanup: only plugin skeletons
 mod ai;
 mod core;
-mod world;
 mod presentation;
+mod world;
 
 #[cfg(test)]
 mod tests;

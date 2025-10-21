@@ -19,7 +19,6 @@ impl Plugin for AiSocialPlugin {
         // - Emotional contagion system
         // - Social memory system
         // - Cooperation and reciprocity system
-        app
-            .add_plugins(components::SocialComponentsPlugin);
+        app.add_plugins(components::SocialComponentsPlugin);
     }
 }

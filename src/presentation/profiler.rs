@@ -29,8 +29,7 @@ pub struct ProfilerPlugin;
 
 impl Plugin for ProfilerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
+        app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
             .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
             .add_plugins(PerfUiPlugin)
             .init_resource::<ProfilerConfig>()

@@ -39,8 +39,7 @@ pub struct RegisterCognitionComponentsPlugin;
 
 impl Plugin for RegisterCognitionComponentsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .register_type::<PersonalityVector>()
+        app.register_type::<PersonalityVector>()
             .register_type::<RoleAffinities>();
     }
 }

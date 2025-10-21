@@ -3,9 +3,8 @@
 use bevy::prelude::*;
 use rand::prelude::*;
 
-
 pub fn spawn_npcs_system(
-    mut commands: Commands,
+    commands: Commands,
     asset_server: Res<AssetServer>,
     windows: Query<&Window>,
     resources: Res<crate::core::constants::GameConstants>,

@@ -1,6 +1,6 @@
 mod components;
-mod systems;
 mod events;
+mod systems;
 
 use bevy::prelude::*;
 
@@ -19,7 +19,6 @@ impl Plugin for AiCognitionPlugin {
         // - Decision-making system
         // - Goal planning system
         // - Attention allocation system
-        app
-            .add_plugins(components::RegisterCognitionComponentsPlugin);
+        app.add_plugins(components::RegisterCognitionComponentsPlugin);
     }
 }
