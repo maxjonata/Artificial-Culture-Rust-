@@ -66,7 +66,6 @@ pub fn time_ui(
         });
     });
 
-    time.set_relative_speed(constants.time_speed);
     Ok(())
 }
 
