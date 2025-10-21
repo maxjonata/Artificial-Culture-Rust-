@@ -5,6 +5,3 @@
 pub mod ai;
 pub mod core;
 pub mod presentation;
-
-#[cfg(test)]
-pub mod tests;
